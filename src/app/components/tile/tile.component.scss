@@ -1,0 +1,23 @@
+:host {
+  padding: 3px;
+  position: absolute;
+
+  .content {
+    height: 100%;
+    width: 100%;
+    border-radius: 20%;
+
+    box-shadow: 3px 3px;
+
+    &:after {
+      content: "";
+      position: absolute;
+      height: 70%;
+      width: 70%;
+      top: 15%;
+      left: 15%;
+      border-radius: 30%;
+      background: rgba(255, 255, 255, 0.1);
+    }
+  }
+}
