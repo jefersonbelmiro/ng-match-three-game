@@ -1,5 +1,7 @@
 # NgMatchThreeGame
 
+### [Play the game](https://jefersonbelmiro.github.io/ng-match-three-game/)
+
 This project was generated with [Angular CLI](https://github.com/angular/angular-cli) version 9.1.7.
 
 ## Development server

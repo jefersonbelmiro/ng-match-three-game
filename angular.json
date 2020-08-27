@@ -121,8 +121,15 @@
               "devServerTarget": "ng-match-three-game:serve:production"
             }
           }
+        },
+        "deploy": {
+          "builder": "angular-cli-ghpages:deploy",
+          "options": {
+            "baseHref": "/ng-match-three-game/"
+          }
         }
       }
-    }},
+    }
+  },
   "defaultProject": "ng-match-three-game"
 }
