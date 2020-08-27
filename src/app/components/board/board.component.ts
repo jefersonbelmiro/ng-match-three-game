@@ -8,11 +8,11 @@ import {
   ViewContainerRef,
 } from '@angular/core';
 import { EMPTY, forkJoin, Observable } from 'rxjs';
-import { switchMap, finalize } from 'rxjs/operators';
+import { switchMap, finalize, tap } from 'rxjs/operators';
 import { BoardService } from '../../services/board.service';
 import { MatchService } from '../../services/match.service';
 import { TileService } from '../../services/tile.service';
-import { Board, Position, States, Tile } from '../../shared';
+import { Board, Position, Tile } from '../../shared';
 
 @Component({
   selector: 'app-board',
@@ -34,7 +34,7 @@ export class BoardComponent implements Board, OnInit {
   container: ViewContainerRef;
 
   state: {
-    frozen?: boolean;
+    busy?: number;
     source?: Tile;
     pointer?: { x: number; y: number };
   };
@@ -52,7 +52,7 @@ export class BoardComponent implements Board, OnInit {
       return this.tileService.createComponent(data, this.container);
     };
     this.service.create(this, tileFactory);
-    this.state = { source: null, pointer: null, frozen: false };
+    this.state = { source: null, pointer: null, busy: 0 };
   }
 
   @HostListener('mousedown', ['$event'])
@@ -65,19 +65,19 @@ export class BoardComponent implements Board, OnInit {
     const row = Math.floor((event.clientY - rect.top) / height);
     const source = this.service.getAt({ row, column });
 
-    if (this.state?.frozen || !source || !source.idle) {
+    if (this.state.busy || !source || !source.idle) {
       return;
     }
 
-    const pointer = { x: event.clientX, y: event.clientY };
-    this.state = { ...this.state, source, pointer };
+    this.state.pointer = { x: event.clientX, y: event.clientY };
+    this.state.source = source;
   }
 
   @HostListener('mousemove', ['$event'])
   onMouseMove(event: MouseEvent) {
-    const { pointer, source, frozen } = this.state;
+    const { pointer, source, busy } = this.state;
 
-    if (!pointer || frozen || !source || !source.idle) {
+    if (busy || !pointer || !source || !source.idle) {
       return;
     }
 
@@ -92,7 +92,7 @@ export class BoardComponent implements Board, OnInit {
       return;
     }
 
-    this.state = { pointer: null, source: null };
+    this.state = { ...this.state, pointer: null, source: null };
 
     let { row, column } = source;
     if (Math.abs(distX) > Math.abs(distY)) {
@@ -121,18 +121,21 @@ export class BoardComponent implements Board, OnInit {
     const sourceTile = this.service.getAt(source);
     const targetTile = this.service.getAt(target);
     const shifts = [sourceTile.shift(target), targetTile.shift(source)];
-    return forkJoin(shifts);
+    this.state.busy++;
+    return forkJoin(shifts).pipe(
+      finalize(() => {
+        this.state.busy--;
+      })
+    );
   }
 
   processMatches(matches: Tile[]) {
-    this.state.frozen = true;
+    this.state.busy++;
     const deaths = matches.map((tile) => tile.die());
     forkJoin(deaths.length ? deaths : EMPTY)
       .pipe(
         switchMap(() => this.fill()),
-        finalize(() => {
-          this.state.frozen = false;
-        })
+        finalize(() => this.state.busy--)
       )
       .subscribe(() => {
         this.processMatches(this.matches.find());

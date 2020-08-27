@@ -1,19 +1,22 @@
-import { Component, Input, ElementRef, HostBinding } from '@angular/core';
-import { Tile, Colors, Position, States } from '../../shared';
-import { Observable } from 'rxjs';
 import {
-  style,
   animate,
   AnimationBuilder,
+  AnimationMetadata,
+  group,
+  keyframes,
   query,
   sequence,
-  trigger,
-  transition,
-  AnimationMetadata,
+  style,
 } from '@angular/animations';
-
+import { Component, ElementRef, Input } from '@angular/core';
+import { Observable } from 'rxjs';
 import { tap } from 'rxjs/operators';
 import { BoardService } from '../../services/board.service';
+import { Colors, Position, States, Tile } from '../../shared';
+
+const random = (min: number, max: number) => {
+  return Math.floor(Math.random() * (max - min + 1) + min);
+};
 
 @Component({
   selector: 'app-tile',
@@ -70,8 +73,19 @@ export class TileComponent implements Tile {
       top: row * this.height + 'px',
       zIndex: 5,
     };
-    const animations = [style(from), animate('250ms ease-in', style(to))];
+
+    const falling = this.row < 0;
+    const speed = random(150, 250);
+
+    const animations = [
+      group([
+        style(from),
+        animate('250ms ease-in', style(to)),
+        ...(falling ? this.rubberBandAnimation(speed, 250) : []),
+      ]),
+    ];
     this.state = States.Shift;
+
     return this.animate(animations).pipe(
       tap(() => {
         Object.assign(this, { row, column, state: States.Idle });
@@ -80,13 +94,43 @@ export class TileComponent implements Tile {
     );
   }
 
+  rubberBandAnimation(duration: number, delay: number) {
+    return [
+      animate(
+        `${duration}ms ${delay}ms`,
+        keyframes([
+          style({
+            transform: 'scale(1, 1)',
+            easing: 'ease',
+            offset: 0,
+          }),
+          style({
+            transform: 'scale(1.07, 0.7) translateY(18%)',
+            easing: 'ease',
+            offset: 0.3,
+          }),
+          style({
+            transform: 'scale(0.9, 1.07) translateY(-8%)',
+            easing: 'ease',
+            offset: 0.6,
+          }),
+          style({
+            transform: 'scale(1, 1) translateY(0%)',
+            easing: 'ease',
+            offset: 1,
+          }),
+        ])
+      ),
+    ];
+  }
+
   die() {
     const animations = [
       style({ zIndex: 5 }),
       query('.content', [animate('50ms', style({ borderRadius: '0' }))]),
       sequence([
-        animate('80ms', style({ transform: 'scale(1.2)', opacity: 1 })),
-        animate('250ms', style({ transform: 'scale(0)', opacity: 1 })),
+        animate('80ms', style({ transform: 'scale(1.2)', opacity: 0 })),
+        animate('200ms', style({ transform: 'scale(0)', opacity: 1 })),
       ]),
     ];
     this.state = States.Dead;
