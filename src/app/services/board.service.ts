@@ -1,28 +1,28 @@
 import { Injectable, ComponentRef } from '@angular/core';
 import { Position, Board, Tile } from '../shared';
 
-interface TileFactory {
-  (position: Position): ComponentRef<Tile>;
-}
-
 @Injectable({
   providedIn: 'root',
 })
 export class BoardService {
   data: Tile[][] = [];
   dataRef: WeakMap<Tile, ComponentRef<Tile>>;
-  tileFactory: TileFactory;
+  createTile: (position: Position) => ComponentRef<Tile>;
   rows: number;
   columns: number;
+  height: number;
+  width: number;
 
   constructor() {}
 
-  create({ rows, columns }: Board, tileFactory: TileFactory) {
+  create(board: Board, createTileFactory) {
     this.data = [];
     this.dataRef = new WeakMap();
-    this.tileFactory = tileFactory;
-    this.rows = rows;
-    this.columns = columns;
+    this.rows = board.rows;
+    this.columns = board.columns;
+    this.width = board.width;
+    this.height = board.height;
+    this.createTile = createTileFactory(board);
 
     for (let row = 0; row < this.rows; row++) {
       this.data[row] = [];
@@ -32,12 +32,30 @@ export class BoardService {
     }
   }
 
-  getData() {
-    return this.data;
+  // @FIXME
+  update(board: Board) {
+    this.width = board.width;
+    this.height = board.height;
+    const width = board.width / board.columns;
+    const height = board.height / board.rows;
+    for (let row = 0; row < this.data.length; row++) {
+      const columns = this.data[row];
+      for (let column = 0; column < columns.length; column++) {
+        const tile = this.getAt({ row, column });
+        this.updateAt(tile, { width, height });
+      }
+    }
+  }
+
+  updateAt(position: Position, data: Partial<Tile>) {
+    const tile = this.getAt(position);
+    if (tile) {
+      Object.assign(tile, data);
+    }
   }
 
   crateAt(position: Position) {
-    const ref = this.tileFactory(position);
+    const ref = this.createTile(position);
     this.setAt(position, ref.instance);
     this.dataRef.set(ref.instance, ref);
     return ref.instance;

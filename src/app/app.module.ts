@@ -5,12 +5,14 @@ import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { AppComponent } from './app.component';
 import { BoardComponent } from './components/board/board.component';
 import { TileComponent } from './components/tile/tile.component';
+import { PlayComponent } from './containers/play/play.component';
 
 @NgModule({
   declarations: [
     AppComponent,
     BoardComponent,
-    TileComponent
+    TileComponent,
+    PlayComponent
   ],
   imports: [
     BrowserModule,

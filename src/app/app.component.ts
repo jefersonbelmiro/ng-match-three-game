@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, HostListener } from '@angular/core';
 
 @Component({
   selector: 'app-root',
@@ -10,14 +10,21 @@ export class AppComponent {
   height = 400;
 
   constructor() {
-    window.addEventListener('resize', this.resize.bind(this), false);
-    window.addEventListener('orientationchange', this.resize.bind(this), false);
-    this.resize();
+    this.updateSize();
   }
 
-  resize() {
-    let size = Math.min(window.innerWidth, window.innerHeight, 400);
-    this.width = size;
-    this.height = size;
+  @HostListener('window:resize')
+  onResize() {
+    this.updateSize();
+  }
+
+  @HostListener('window:orientationchange')
+  onOrientationChange() {
+    this.updateSize();
+  }
+
+  updateSize() {
+    this.width = window.innerWidth;
+    this.height = window.innerHeight;
   }
 }

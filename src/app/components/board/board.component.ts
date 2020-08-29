@@ -1,18 +1,14 @@
 import {
   Component,
   ElementRef,
+  EventEmitter,
   HostListener,
   Input,
   OnInit,
-  ViewChild,
-  ViewContainerRef,
+  Output,
 } from '@angular/core';
-import { EMPTY, forkJoin, Observable } from 'rxjs';
-import { switchMap, finalize, tap } from 'rxjs/operators';
-import { BoardService } from '../../services/board.service';
-import { MatchService } from '../../services/match.service';
-import { TileService } from '../../services/tile.service';
-import { Board, Position, Tile } from '../../shared';
+import { InputService } from '../../services/input.service';
+import { Board } from '../../shared';
 
 @Component({
   selector: 'app-board',
@@ -26,146 +22,33 @@ import { Board, Position, Tile } from '../../shared';
 export class BoardComponent implements Board, OnInit {
   @Input() width: number;
   @Input() height: number;
+  @Input() rows: number;
+  @Input() columns: number;
 
-  @Input() rows: number = 5;
-  @Input() columns: number = 5;
+  @Output() select = new EventEmitter();
+  @Output() swap = new EventEmitter();
 
-  @ViewChild('container', { read: ViewContainerRef, static: true })
-  container: ViewContainerRef;
-
-  state: {
-    busy?: number;
-    source?: Tile;
-    pointer?: { x: number; y: number };
-  };
-
-  constructor(
-    private elementRef: ElementRef,
-    private service: BoardService,
-    private tileService: TileService,
-    private matches: MatchService
-  ) {}
+  constructor(private elementRef: ElementRef, private input: InputService) {}
 
   ngOnInit(): void {
-    const tileFactory = ({ row, column }) => {
-      const data = this.tileService.buildData({ row, column }, this);
-      return this.tileService.createComponent(data, this.container);
-    };
-    this.service.create(this, tileFactory);
-    this.state = { source: null, pointer: null, busy: 0 };
+    this.input.setElement(this.elementRef.nativeElement);
   }
 
   @HostListener('mousedown', ['$event'])
+  @HostListener('touchstart', ['$event'])
   onInputDown(event: MouseEvent) {
-    const element = this.elementRef.nativeElement as HTMLElement;
-    const rect = element.getBoundingClientRect();
-    const width = this.width / this.columns;
-    const height = this.height / this.rows;
-    const column = Math.floor((event.clientX - rect.left) / width);
-    const row = Math.floor((event.clientY - rect.top) / height);
-    const source = this.service.getAt({ row, column });
-
-    if (this.state.busy || !source || !source.idle) {
-      return;
+    const source = this.input.onDown(event);
+    if (source) {
+      this.select.emit(source);
     }
-
-    this.state.pointer = { x: event.clientX, y: event.clientY };
-    this.state.source = source;
   }
 
   @HostListener('mousemove', ['$event'])
+  @HostListener('touchmove', ['$event'])
   onMouseMove(event: MouseEvent) {
-    const { pointer, source, busy } = this.state;
-
-    if (busy || !pointer || !source || !source.idle) {
-      return;
+    const target = this.input.onMove(event);
+    if (target) {
+      this.swap.emit(target);
     }
-
-    const distX = event.clientX - pointer.x;
-    const distY = event.clientY - pointer.y;
-    const min = Math.min(
-      this.width / this.columns / 2,
-      this.height / this.rows / 2
-    );
-
-    if (Math.abs(distX) <= min && Math.abs(distY) <= min) {
-      return;
-    }
-
-    this.state = { ...this.state, pointer: null, source: null };
-
-    let { row, column } = source;
-    if (Math.abs(distX) > Math.abs(distY)) {
-      column = distX > 0 ? column + 1 : column - 1;
-    } else {
-      row = distY > 0 ? row + 1 : row - 1;
-    }
-    const target = this.service.getAt({ row, column });
-    if (!target || !target.idle) {
-      return;
-    }
-
-    this.swap(source, target).subscribe(() => {
-      const matches = [
-        ...this.matches.find(source),
-        ...this.matches.find(target),
-      ];
-      if (!matches.length) {
-        return this.swap(source, target).subscribe();
-      }
-      this.processMatches(matches);
-    });
-  }
-
-  swap(source: Position, target: Position) {
-    const sourceTile = this.service.getAt(source);
-    const targetTile = this.service.getAt(target);
-    const shifts = [sourceTile.shift(target), targetTile.shift(source)];
-    this.state.busy++;
-    return forkJoin(shifts).pipe(
-      finalize(() => {
-        this.state.busy--;
-      })
-    );
-  }
-
-  processMatches(matches: Tile[]) {
-    this.state.busy++;
-    const deaths = matches.map((tile) => tile.die());
-    forkJoin(deaths.length ? deaths : EMPTY)
-      .pipe(
-        switchMap(() => this.fill()),
-        finalize(() => this.state.busy--)
-      )
-      .subscribe(() => {
-        this.processMatches(this.matches.find());
-      });
-  }
-
-  fill() {
-    const data$: Observable<void>[] = [];
-    for (let column = 0; column < this.columns; column++) {
-      let shift = 0;
-      const shiftData = [];
-      for (let row = this.rows - 1; row >= 0; row--) {
-        const tile = this.service.getAt({ row, column } as Position);
-        if (!tile || !tile.alive) {
-          shiftData.push({ row: shift, column });
-          shift++;
-          continue;
-        }
-        if (shift > 0) {
-          const shift$ = tile.shift({ row: row + shift, column });
-          data$.push(shift$);
-        }
-      }
-      shiftData.forEach(({ row, column }) => {
-        const tile = this.service.crateAt({ row: row - shift, column });
-        const stream$ = tile.shift({ row, column });
-        data$.push(stream$);
-      });
-    }
-
-    return data$.length ? forkJoin(data$) : EMPTY;
   }
 }

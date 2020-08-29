@@ -1,0 +1,7 @@
+<app-board
+  [width]="boardConfig.width"
+  [height]="boardConfig.height"
+  (swap)="onSwap($event)"
+>
+  <ng-container #container></ng-container>
+</app-board>

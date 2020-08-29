@@ -38,3 +38,8 @@ export interface Tile {
   die(): Observable<void>;
   shift(target: Position): Observable<void>;
 }
+
+export interface State {
+  busy: number;
+}
+

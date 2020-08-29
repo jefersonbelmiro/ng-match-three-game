@@ -30,7 +30,7 @@ export class MatchService {
     if (target) {
       return this.getSameType(target);
     }
-    const data = this.board.getData();
+    const data = this.board.data;
     const matches = [];
     for (let row = 0; row < data.length; row++) {
       const columns = data[row];
