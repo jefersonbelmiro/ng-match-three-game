@@ -1,0 +1,19 @@
+<div class="content">
+  <div class="moves">
+    <div class="label">Moves</div>
+    <div class="value">20</div>
+  </div>
+  <div class="target">
+    <div class="label">Target</div>
+    <div class="value">
+      <div class="target-item" *ngFor="let item of data">
+        <div class="type" [style.background]="item.type"></div>
+        <div class="remain">x{{ item.remain }}</div>
+      </div>
+    </div>
+  </div>
+  <div class="score">
+    <div class="label">Score</div>
+    <div class="value">2500</div>
+  </div>
+</div>

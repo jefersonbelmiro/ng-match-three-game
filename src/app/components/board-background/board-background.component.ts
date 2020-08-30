@@ -23,14 +23,23 @@ export class BoardBackgroundComponent implements AfterViewInit {
 
   @ViewChild('canvas', { static: true }) canvasRef: ElementRef;
 
+  private viewInit = false;
+
   constructor() {}
 
-  ngAfterViewInit(): void {
+  ngOnChanges() {
+    if (this.viewInit) {
+      Promise.resolve().then(() => this.update());
+    }
+  }
+
+  update() {
     const element = this.canvasRef.nativeElement as HTMLCanvasElement;
     const context = element.getContext('2d');
 
     const width = this.width / this.columns;
     const height = this.height / this.rows;
+    context.clearRect(0, 0, this.width, this.height);
 
     for (let row = 0; row < this.rows; row++) {
       for (let column = 0; column < this.columns; column++) {
@@ -43,5 +52,11 @@ export class BoardBackgroundComponent implements AfterViewInit {
         context.closePath();
       }
     }
+  }
+
+  ngAfterViewInit(): void {
+    console.log('ngAfterViewInit')
+    this.viewInit = true;
+    this.update();
   }
 }

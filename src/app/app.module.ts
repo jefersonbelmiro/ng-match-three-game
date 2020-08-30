@@ -6,6 +6,7 @@ import { BoardBackgroundComponent } from './components/board-background/board-ba
 import { BoardComponent } from './components/board/board.component';
 import { TileComponent } from './components/tile/tile.component';
 import { PlayComponent } from './containers/play/play.component';
+import { LevelStatusComponent } from './components/level-status/level-status.component';
 
 @NgModule({
   declarations: [
@@ -14,6 +15,7 @@ import { PlayComponent } from './containers/play/play.component';
     TileComponent,
     PlayComponent,
     BoardBackgroundComponent,
+    LevelStatusComponent,
   ],
   imports: [BrowserModule, BrowserAnimationsModule],
   providers: [],
