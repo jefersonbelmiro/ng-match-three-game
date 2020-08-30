@@ -1,1 +1,10 @@
-<ng-content></ng-content>
+<div class="content">
+  <ng-content></ng-content>
+</div>
+<app-board-background
+  class="background"
+  [width]="width"
+  [height]="height"
+  [rows]="rows"
+  [columns]="columns"
+></app-board-background>

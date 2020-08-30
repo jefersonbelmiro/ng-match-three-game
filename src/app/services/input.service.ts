@@ -25,26 +25,19 @@ export class InputService {
     if (this.globalState.isBusy()) {
       return;
     }
-    let clientX = event.clientX;
-    let clientY = event.clientY;
-    if (event instanceof TouchEvent) {
-      const touch = (event as unknown) as TouchEvent;
-      clientX = touch.touches[0].pageX;
-      clientY = touch.touches[0].pageY;
-    }
-
+    const pointer = this.getPointer(event);
     const rect = this.state.element.getBoundingClientRect();
     const width = this.board.width / this.board.columns;
     const height = this.board.height / this.board.rows;
-    const column = Math.floor((clientX - rect.left) / width);
-    const row = Math.floor((clientY - rect.top) / height);
+    const column = Math.floor((pointer.x - rect.left) / width);
+    const row = Math.floor((pointer.y - rect.top) / height);
     const source = this.board.getAt({ row, column });
 
     if (!source || !source.idle) {
       return;
     }
 
-    this.state.pointer = { x: clientX, y: clientY };
+    this.state.pointer = pointer;
     this.state.source = source;
     return source;
   }
@@ -55,16 +48,9 @@ export class InputService {
       return;
     }
 
-    let clientX = event.clientX;
-    let clientY = event.clientY;
-    if (event instanceof TouchEvent) {
-      const touch = (event as unknown) as TouchEvent;
-      clientX = touch.touches[0].pageX;
-      clientY = touch.touches[0].pageY;
-    }
-
-    const distX = clientX - pointer.x;
-    const distY = clientY - pointer.y;
+    const current = this.getPointer(event);
+    const distX = current.x - pointer.x;
+    const distY = current.y - pointer.y;
     const min = Math.min(
       this.board.width / this.board.columns / 2,
       this.board.height / this.board.rows / 2
@@ -90,5 +76,18 @@ export class InputService {
       return;
     }
     return { source, target };
+  }
+
+  private getPointer(event: MouseEvent | TouchEvent) {
+    if (event instanceof TouchEvent) {
+      return {
+        x: event.touches[0].pageX,
+        y: event.touches[0].pageY,
+      };
+    }
+    return {
+      x: event.clientX,
+      y: event.clientY,
+    };
   }
 }

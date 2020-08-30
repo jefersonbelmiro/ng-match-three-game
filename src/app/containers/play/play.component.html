@@ -1,6 +1,8 @@
 <app-board
   [width]="boardConfig.width"
   [height]="boardConfig.height"
+  [rows]="boardConfig.rows"
+  [columns]="boardConfig.columns"
   (swap)="onSwap($event)"
 >
   <ng-container #container></ng-container>
