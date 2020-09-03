@@ -31,7 +31,7 @@ export class TileService {
 
   buildUpdateFactory() {
     return (board: Board) => {
-      return (data: Tile) => {
+      return (data: Partial<Tile>) => {
         const width = board.width / board.columns;
         const height = board.height / board.rows;
         return { ...data, width, height } as Tile;

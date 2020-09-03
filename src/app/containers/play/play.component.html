@@ -1,4 +1,8 @@
-<app-level-status></app-level-status>
+<app-level-status
+  [target]="levelData.target"
+  [moves]="levelData.moves"
+  [score]="levelData.score"
+></app-level-status>
 
 <app-board
   [width]="boardConfig.width"

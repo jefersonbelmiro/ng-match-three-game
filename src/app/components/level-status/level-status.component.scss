@@ -6,8 +6,8 @@
 }
 
 .content {
-  // font-family: 'Titan One', cursive;
-  font-family: 'PT Mono', monospace;
+  font-family: 'Titan One', cursive;
+  // font-family: "PT Mono", monospace;
 
   position: absolute;
   display: flex;
@@ -17,59 +17,52 @@
   justify-content: space-between;
   user-select: none;
   color: white;
-  background: #222;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  box-shadow: 0 0 6px 2px rgba(0, 0, 0, 0.5);
-  border-radius: 0 0 5px 5px;
-  border-top: 0;
+  background: #111;
   z-index: 100;
+
+
   > * {
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    flex-direction: column;
-    text-align: center;
-  }
-}
+    justify-content: center;
 
-.label {
-  font-size: 15px;
-}
-.value {
-  font-size: 25px;
-  font-weight: bold;
-}
-
-.moves {
-  width: 80px;
-}
-
-.target {
-  flex: 1;
-  .value {
-    font-size: 16px;
-    position: relative;
-    width: 100%;
-    height: 100%;
-    display: flex;
-    justify-content: space-around;
-
-    .target-item {
-      .type {
-        width: 20px;
-        height: 20px;
-        border-radius: 5px;
-      }
-      .remain {
-        padding-left: 5px;
-      }
-      display: flex;
-      justify-content: center;
-      align-items: center;
+    fa-icon {
+      margin-right: 5px;
     }
   }
 }
 
+.moves {
+  width: 80px;
+  font-size: 25px;
+}
+
 .score {
   width: 80px;
+  font-size: 25px;
 }
+
+.target {
+  font-size: 20px;
+  position: relative;
+  display: flex;
+  justify-content: space-around;
+
+  .target-item {
+    &:not(:last-child) {
+      margin-right: 15px;
+    }
+    .type {
+      width: 20px;
+      height: 20px;
+      border-radius: 5px;
+    }
+    .remain {
+      padding-left: 5px;
+    }
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+}
+

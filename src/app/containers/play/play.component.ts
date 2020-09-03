@@ -12,7 +12,8 @@ import { BoardService } from '../../services/board.service';
 import { MatchService } from '../../services/match.service';
 import { StateService } from '../../services/state.service';
 import { TileService } from '../../services/tile.service';
-import { Board, Position, Tile } from '../../shared';
+import { Board, Position, Tile, Colors } from '../../shared';
+import { LevelService } from '../../services/level.service';
 
 @Component({
   selector: 'app-play',
@@ -27,6 +28,8 @@ export class PlayComponent implements OnInit, OnChanges {
   @Input() columns: number = 5;
 
   boardConfig: Board;
+  // @FIXME - add interface
+  levelData;
 
   @ViewChild('container', { read: ViewContainerRef, static: true })
   container: ViewContainerRef;
@@ -35,16 +38,20 @@ export class PlayComponent implements OnInit, OnChanges {
     private tileBuilder: TileService,
     private board: BoardService,
     private matches: MatchService,
-    private state: StateService
+    private state: StateService,
+    private level: LevelService
   ) {}
 
-  ngOnInit() {}
+  ngOnInit() {
+    this.createBoard();
+    this.level.create();
+    this.level.getState().subscribe((data) => (this.levelData = data));
+  }
 
   ngOnChanges() {
-    if (!this.boardConfig) {
-      return this.createBoard();
+    if (this.boardConfig) {
+      this.updateBoard();
     }
-    this.updateBoard();
   }
 
   createBoard() {
@@ -55,8 +62,14 @@ export class PlayComponent implements OnInit, OnChanges {
       width: size,
       height: size,
     };
-    const createFactory = this.tileBuilder.buildCreateFactory(this.container);
-    this.board.create(this.boardConfig, createFactory);
+    const createTileFactory = this.tileBuilder.buildCreateFactory(
+      this.container
+    );
+    const updateTileFactory = this.tileBuilder.buildUpdateFactory();
+    this.board.create(this.boardConfig, {
+      createTileFactory,
+      updateTileFactory,
+    });
   }
 
   updateBoard() {
@@ -74,6 +87,8 @@ export class PlayComponent implements OnInit, OnChanges {
       if (!matches.length) {
         return this.doSwap(source, target).subscribe();
       }
+
+      this.level.updateMoves();
       this.processMatches(matches);
     });
   }
@@ -92,6 +107,9 @@ export class PlayComponent implements OnInit, OnChanges {
 
   processMatches(matches: Tile[]) {
     this.state.setBusy(true);
+
+    this.updateLevel(matches);
+
     const deaths = matches.map((tile) => tile.die());
     forkJoin(deaths.length ? deaths : EMPTY)
       .pipe(
@@ -101,6 +119,31 @@ export class PlayComponent implements OnInit, OnChanges {
       .subscribe(() => {
         this.processMatches(this.matches.find());
       });
+  }
+
+  updateLevel(matches: Tile[]) {
+    const types = matches
+      .filter((item, index, array) => {
+        return array.indexOf(item) === index;
+      })
+      .reduce((data, current: Tile) => {
+        console.log('data', current.type, current.row, current.column);
+        if (!data[current.type]) {
+          data[current.type] = 0;
+        }
+        data[current.type] += 1;
+        return data;
+      }, {});
+
+    Object.keys(types).forEach((type) => {
+      console.log('matchs', type, types[type]);
+      if (this.level.isTargetType(type as Colors)) {
+        this.level.updateTarget(type as Colors, types[type]);
+      }
+      this.level.updateScore();
+    });
+
+    console.log('matchs types', types);
   }
 
   fillBoard() {

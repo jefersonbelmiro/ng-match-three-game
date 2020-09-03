@@ -1,19 +1,25 @@
 <div class="content">
   <div class="moves">
-    <div class="label">Moves</div>
-    <div class="value">20</div>
+    <fa-icon [icon]="icons.moves"></fa-icon>
+    <span [@valueAnimation]="moves">{{ moves }}</span>
   </div>
+
+  <div class="score">
+    <fa-icon [icon]="icons.star"></fa-icon>
+    <span [@valueAnimation]="score">{{ score }}</span>
+  </div>
+
+  <div style="flex: 1;"></div>
+
   <div class="target">
-    <div class="label">Target</div>
-    <div class="value">
-      <div class="target-item" *ngFor="let item of data">
-        <div class="type" [style.background]="item.type"></div>
-        <div class="remain">x{{ item.remain }}</div>
+    <div class="target-item" *ngFor="let item of target">
+      <div class="type" [style.background]="item.type"></div>
+      <div class="remain" [@valueAnimation]="item.remain">
+        <span *ngIf="item.remain > 0">x{{ item.remain }}</span>
+        <span *ngIf="item.remain <= 0">
+          <fa-icon [icon]="icons.check"></fa-icon>
+        </span>
       </div>
     </div>
-  </div>
-  <div class="score">
-    <div class="label">Score</div>
-    <div class="value">2500</div>
   </div>
 </div>

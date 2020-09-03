@@ -1,31 +1,24 @@
 import { Injectable } from '@angular/core';
-import { BehaviorSubject } from 'rxjs';
-import { State } from '../shared';
+import { Store } from '../shared';
 
 const INITIAL_STATE = {
   busy: 0,
 };
 
+export interface State {
+  busy: number;
+}
+
 @Injectable({
   providedIn: 'root',
 })
-export class StateService {
-  state = new BehaviorSubject(INITIAL_STATE);
-  state$ = this.state.asObservable();
-
-  constructor() {}
-
-  setState(data: Partial<State>) {
-    const current = this.state.value;
-    this.state.next({ ...current, ...data });
-  }
-
-  getState() {
-    return this.state;
+export class StateService extends Store<State> {
+  constructor() {
+    super(INITIAL_STATE);
   }
 
   setBusy(busy: boolean) {
-    let current = this.state.value.busy;
+    let current = this.getValue().busy;
     current += busy ? 1 : -1;
     if (current < 0) {
       current = 0;
@@ -34,6 +27,6 @@ export class StateService {
   }
 
   isBusy() {
-    return this.state.value.busy > 0;
+    return this.getValue().busy > 0;
   }
 }

@@ -1,5 +1,6 @@
-import { Injectable, ComponentRef } from '@angular/core';
-import { Position, Board, Tile } from '../shared';
+import { ComponentRef, Injectable, ViewContainerRef } from '@angular/core';
+import { Board, Position, Tile } from '../shared';
+import { TileService } from './tile.service';
 
 @Injectable({
   providedIn: 'root',
@@ -7,7 +8,13 @@ import { Position, Board, Tile } from '../shared';
 export class BoardService {
   data: Tile[][] = [];
   dataRef: WeakMap<Tile, ComponentRef<Tile>>;
+  createTileFactory: (
+    board: Board
+  ) => (position: Position) => ComponentRef<Tile>;
+  updateTileFactory: (board: Board) => (position: Position) => Tile;
+
   createTile: (position: Position) => ComponentRef<Tile>;
+  updateTile: (data: Partial<Tile>) => Tile;
   rows: number;
   columns: number;
   height: number;
@@ -15,14 +22,18 @@ export class BoardService {
 
   constructor() {}
 
-  create(board: Board, createTileFactory) {
+  create(board: Board, { createTileFactory, updateTileFactory }) {
     this.data = [];
     this.dataRef = new WeakMap();
     this.rows = board.rows;
     this.columns = board.columns;
     this.width = board.width;
     this.height = board.height;
-    this.createTile = createTileFactory(board);
+    this.createTileFactory = createTileFactory;
+    this.updateTileFactory = updateTileFactory;
+
+    this.createTile = this.createTileFactory(board);
+    this.updateTile = this.updateTileFactory(board);
 
     for (let row = 0; row < this.rows; row++) {
       this.data[row] = [];
@@ -32,17 +43,15 @@ export class BoardService {
     }
   }
 
-  // @FIXME
   update(board: Board) {
     this.width = board.width;
     this.height = board.height;
-    const width = board.width / board.columns;
-    const height = board.height / board.rows;
+    this.updateTile = this.updateTileFactory(board);
+    this.createTile = this.createTileFactory(board);
     for (let row = 0; row < this.data.length; row++) {
       const columns = this.data[row];
       for (let column = 0; column < columns.length; column++) {
-        const tile = this.getAt({ row, column });
-        this.updateAt(tile, { width, height });
+        this.updateAt({ row, column }, this.getAt({ row, column }));
       }
     }
   }
@@ -50,7 +59,7 @@ export class BoardService {
   updateAt(position: Position, data: Partial<Tile>) {
     const tile = this.getAt(position);
     if (tile) {
-      Object.assign(tile, data);
+      Object.assign(tile, this.updateTile(data));
     }
   }
 

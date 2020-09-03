@@ -12,7 +12,7 @@ import { Component, ElementRef, Input } from '@angular/core';
 import { Observable } from 'rxjs';
 import { tap } from 'rxjs/operators';
 import { BoardService } from '../../services/board.service';
-import { Colors, Position, States, Tile } from '../../shared';
+import { Colors, Position, TileState, Tile } from '../../shared';
 
 const random = (min: number, max: number) => {
   return Math.floor(Math.random() * (max - min + 1) + min);
@@ -40,7 +40,7 @@ export class TileComponent implements Tile {
 
   @Input() visible = true;
 
-  state = States.Idle;
+  state = TileState.Idle;
 
   constructor(
     private builder: AnimationBuilder,
@@ -55,11 +55,11 @@ export class TileComponent implements Tile {
   }
 
   get alive(): boolean {
-    return this.state !== States.Dead;
+    return this.state !== TileState.Dead;
   }
 
   get idle(): boolean {
-    return this.state === States.Idle;
+    return this.state === TileState.Idle;
   }
 
   shift({ row, column }: Position) {
@@ -84,11 +84,11 @@ export class TileComponent implements Tile {
         ...(falling ? this.rubberBandAnimation(speed, 250) : []),
       ]),
     ];
-    this.state = States.Shift;
+    this.state = TileState.Shift;
 
     return this.animate(animations).pipe(
       tap(() => {
-        Object.assign(this, { row, column, state: States.Idle });
+        Object.assign(this, { row, column, state: TileState.Idle });
         this.board.setAt({ row, column }, this);
       })
     );
@@ -133,7 +133,7 @@ export class TileComponent implements Tile {
         animate('200ms', style({ transform: 'scale(0)', opacity: 1 })),
       ]),
     ];
-    this.state = States.Dead;
+    this.state = TileState.Dead;
     return this.animate(animations).pipe(
       tap(() => {
         this.visible = false;

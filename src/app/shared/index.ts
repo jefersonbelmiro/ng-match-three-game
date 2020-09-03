@@ -1,16 +1,7 @@
-import { Observable } from 'rxjs';
-
-export interface Position {
-  row: number;
-  column: number;
-}
-
-export interface Board {
-  rows: number;
-  columns: number;
-  width: number;
-  height: number;
-}
+export * from './board';
+export * from './position';
+export * from './store';
+export * from './tile';
 
 export enum Colors {
   Blue = '#2C76F5',
@@ -19,27 +10,3 @@ export enum Colors {
   Yellow = '#FADE2A',
   Grey = '#999',
 }
-
-export enum States {
-  Idle = 'idle',
-  Shift = 'shift',
-  Dead = 'dead',
-}
-
-export interface Tile {
-  row: number;
-  column: number;
-  width: number;
-  height: number;
-  type: string;
-  state: States;
-  alive?: boolean;
-  idle?: boolean;
-  die(): Observable<void>;
-  shift(target: Position): Observable<void>;
-}
-
-export interface State {
-  busy: number;
-}
-
