@@ -15,7 +15,7 @@ import { TileService } from '../../services/tile.service';
 import { Board, Position, Tile, Colors } from '../../shared';
 import { LevelService } from '../../services/level.service';
 
-const DEFAULT_SIZE = 600;
+const DEFAULT_SIZE = 400;
 
 @Component({
   selector: 'app-play',
