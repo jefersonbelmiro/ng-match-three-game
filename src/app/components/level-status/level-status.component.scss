@@ -2,11 +2,11 @@
   display: block;
   height: 50px;
   width: 100%;
-  margin-bottom: 10px;
+  margin-bottom: 40px;
 }
 
 .content {
-  font-family: 'Titan One', cursive;
+  font-family: "Titan One", cursive;
   // font-family: "PT Mono", monospace;
 
   position: absolute;
@@ -17,52 +17,66 @@
   justify-content: space-between;
   user-select: none;
   color: white;
-  background: #111;
   z-index: 100;
-
 
   > * {
     display: flex;
     align-items: center;
     justify-content: center;
+    position: relative;
+    color: #ddd;
+    text-shadow: -1px 0 black, 0 1px black, 1px 0 black, 0 -1px black;
+  }
+}
 
-    fa-icon {
-      margin-right: 5px;
-    }
+.box {
+  margin-top: 5px;
+  width: 100px;
+  height: 70px;
+  position: relative;
+  fa-icon {
+    font-size: 25px;
+    position: absolute;
+    left: 0;
+    top: 0;
+    color: rgba(255, 255, 255, 0.4);
   }
 }
 
 .moves {
-  width: 80px;
-  font-size: 25px;
+  font-size: 35px;
 }
 
 .score {
-  width: 80px;
   font-size: 25px;
 }
 
 .target {
-  font-size: 20px;
   position: relative;
+  flex: 1;
   display: flex;
-  justify-content: space-around;
+  flex-wrap: wrap;
+  align-items: center;
+  margin: 5px;
+  height: 70px;
 
   .target-item {
-    &:not(:last-child) {
-      margin-right: 15px;
-    }
-    .type {
-      width: 20px;
-      height: 20px;
-      border-radius: 5px;
-    }
-    .remain {
-      padding-left: 5px;
-    }
     display: flex;
     justify-content: center;
-    align-items: center;
+    padding: 5px;
+    position: relative;
+
+    .remain {
+      position: absolute;
+      bottom: 0;
+      right: 0;
+      padding: 0 5px;
+    }
+
+    .type {
+      flex: 1;
+      width: 100%;
+      max-width: 50px;
+    }
   }
 }
-

@@ -15,6 +15,8 @@ import { TileService } from '../../services/tile.service';
 import { Board, Position, Tile, Colors } from '../../shared';
 import { LevelService } from '../../services/level.service';
 
+const DEFAULT_SIZE = 600;
+
 @Component({
   selector: 'app-play',
   templateUrl: './play.component.html',
@@ -44,7 +46,7 @@ export class PlayComponent implements OnInit, OnChanges {
 
   ngOnInit() {
     this.createBoard();
-    this.level.create();
+    this.level.create(this.board.data);
     this.level.getState().subscribe((data) => (this.levelData = data));
   }
 
@@ -55,7 +57,7 @@ export class PlayComponent implements OnInit, OnChanges {
   }
 
   createBoard() {
-    let size = Math.min(this.width, this.height, 400);
+    let size = Math.min(this.width, this.height, DEFAULT_SIZE);
     this.boardConfig = {
       rows: this.rows,
       columns: this.columns,
@@ -73,7 +75,7 @@ export class PlayComponent implements OnInit, OnChanges {
   }
 
   updateBoard() {
-    let size = Math.min(this.width, this.height, 400);
+    let size = Math.min(this.width, this.height, DEFAULT_SIZE);
     this.boardConfig = { ...this.board, width: size, height: size };
     this.board.update(this.boardConfig);
   }

@@ -3,6 +3,7 @@ import {
   faStar,
   faArrowsAlt,
   faCheck,
+  faStopwatch,
 } from '@fortawesome/free-solid-svg-icons';
 import {
   trigger,
@@ -13,6 +14,7 @@ import {
 } from '@angular/animations';
 import { transition } from '@angular/animations';
 import { query, style, group, animate } from '@angular/animations';
+import { Monsters } from '../../shared';
 
 const heartBeat = animation([
   animate(
@@ -54,14 +56,14 @@ const heartBeat = animation([
       transition(':increment', [useAnimation(heartBeat)], {
         params: {
           duration: 300,
-          scale: 1.9,
+          scale: 1.4,
           delay: 0,
         },
       }),
       transition(':decrement', [useAnimation(heartBeat)], {
         params: {
           duration: 300,
-          scale: 1.9,
+          scale: 1.4,
           delay: 0,
         },
       }),
@@ -77,11 +79,12 @@ export class LevelStatusComponent {
     star: faStar,
     moves: faArrowsAlt,
     check: faCheck,
+    timer: faStopwatch,
   };
 
   constructor() {}
 
-  ngOnChanges(changes): void {
-    console.log('levelstatus change', Object.keys(changes));
+  getSprite(type: string) {
+    return Monsters[type];
   }
 }

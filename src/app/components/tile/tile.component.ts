@@ -12,11 +12,14 @@ import { Component, ElementRef, Input } from '@angular/core';
 import { Observable } from 'rxjs';
 import { tap } from 'rxjs/operators';
 import { BoardService } from '../../services/board.service';
-import { Colors, Position, TileState, Tile } from '../../shared';
+import { Colors, Position, TileState, Tile, Monsters } from '../../shared';
 
 const random = (min: number, max: number) => {
   return Math.floor(Math.random() * (max - min + 1) + min);
 };
+
+const colors = Object.keys(Colors);
+const monsters = Object.keys(Monsters);
 
 @Component({
   selector: 'app-tile',
@@ -51,7 +54,27 @@ export class TileComponent implements Tile {
   ngOnInit() {}
 
   get color() {
-    return Colors[this.type];
+    const index = monsters.indexOf(this.type);
+    return colors[index];
+  }
+
+  get glowUrl() {
+    return `assets/Items-effects/Glow/${this.type}.png`;
+  }
+
+  get image() {
+    return Monsters[this.type];
+    // return 'assets/Cat/Cat_1.png';
+    // return 'assets/Dragon/Head_1.png';
+    // return 'assets/Lizard/Lizard_1.png';
+    // return 'assets/Octopus/Octopus_1.png';
+    // return 'assets/Owl/Owl_1.png';
+    // return 'assets/Pig/Pig_1.png';
+    // return 'assets/Rabbit/Rabbit_1.png';
+    // return 'assets/Rainbow/Rainbow_1.png';
+    // return 'assets/Sheep/Sheep_1.png';
+    // return 'assets/Spider/Spider_1.png';
+    // return 'assets/Unicorn/Unicorn_1.png';
   }
 
   get alive(): boolean {
@@ -81,7 +104,7 @@ export class TileComponent implements Tile {
       group([
         style(from),
         animate('250ms ease-in', style(to)),
-        ...(falling ? this.rubberBandAnimation(speed, 250) : []),
+        // ...(falling ? this.rubberBandAnimation(speed, 250) : []),
       ]),
     ];
     this.state = TileState.Shift;
@@ -127,10 +150,15 @@ export class TileComponent implements Tile {
   die() {
     const animations = [
       style({ zIndex: 5 }),
-      query('.content', [animate('50ms', style({ borderRadius: '0' }))]),
-      sequence([
-        animate('80ms', style({ transform: 'scale(1.2)', opacity: 0 })),
-        animate('200ms', style({ transform: 'scale(0)', opacity: 1 })),
+      group([
+        query('.glow', [
+          style({ opacity: 1 }),
+          animate('200ms', style({ transform: 'scale(1.8)', opacity: '0' })),
+        ]),
+        query('.sprite', [
+          style({ opacity: 1 }),
+          animate('200ms', style({ transform: 'scale(0)', opacity: '0' })),
+        ]),
       ]),
     ];
     this.state = TileState.Dead;

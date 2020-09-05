@@ -1,6 +1,5 @@
-import { ComponentRef, Injectable, ViewContainerRef } from '@angular/core';
+import { ComponentRef, Injectable } from '@angular/core';
 import { Board, Position, Tile } from '../shared';
-import { TileService } from './tile.service';
 
 @Injectable({
   providedIn: 'root',

@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { Colors, Store } from '../shared';
+import { Colors, Store, Tile } from '../shared';
 
 interface State {
   moves: number;
@@ -26,20 +26,35 @@ export class LevelService extends Store<State> {
     super(INITIAL_STATE);
   }
 
-  create() {
+  private extractTypes(data: Tile[][], slice = 0) {
+    const types = [];
+    for (let row = 0; row < data.length; row++) {
+      const columns = data[row];
+      for (let column = 0; column < columns.length; column++) {
+        const data = columns[column] as Tile;
+        if (!types.includes(data.type)) {
+          types.push(data.type);
+        }
+      }
+    }
+
+    return types.sort(() => Math.random() - 0.5).slice(slice);
+  }
+
+  create(boardData: Tile[][]) {
     const current = this.getValue();
     const level = current.level + 1;
-    const moves = Math.ceil(level / 2) * 10;
+    const moves = Math.ceil(level / 2) * 10 * 10;
 
     const target = [];
-    const types = Object.keys(Colors).sort(() => Math.random() - 0.5);
-    const length = Math.min(Math.ceil(level + 2), types.length);
+    const types = this.extractTypes(boardData);
+    const length = 2;//Math.min(Math.ceil(level), types.length);
 
     for (let index = 0; index < length; index++) {
       const type = types[index % types.length];
       target.push({
         type,
-        remain: Math.ceil(level / 2) * 6,
+        remain: Math.ceil(level / 2) * 6 * 3,
       });
     }
 

@@ -2,23 +2,39 @@
   padding: 3px;
   position: absolute;
 
+  user-select: none;
+
+  cursor: pointer;
+
   .content {
-    height: 90%;
-    width: 90%;
-    border-radius: 20%;
-    margin: 5% 0 0 5%;
-
-    box-shadow: 3px 3px rgba(0,0,0, 0.5);
-
-    &:after {
-      content: "";
+    .sprite {
+      z-index: 20;
+      z-index: 2;
       position: absolute;
-      height: 70%;
-      width: 70%;
+      left: 10%;
       top: 15%;
-      left: 15%;
-      border-radius: 30%;
-      background: rgba(255, 255, 255, 0.1);
+      width: 80%;
     }
+
+    .glow {
+      width: 100%;
+      height: 100%;
+      z-index: 1;
+      opacity: 1;
+    }
+
+    // .ground {
+    // z-index: 1;
+    // background: rgba(0,0,0,0.3);
+    // display: block;
+    // position: absolute;
+    // left: 10%;
+    // top: 40%;
+    // width: 80%;
+    // height: 50%;
+    // border-radius: 50%;
+    // }
+    // background-color: #000;
+    // border-radius: 50%;
   }
 }
