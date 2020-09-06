@@ -153,12 +153,33 @@ export class TileComponent implements Tile {
       group([
         query('.glow', [
           style({ opacity: 1 }),
-          animate('200ms', style({ transform: 'scale(1.8)', opacity: '0' })),
+          animate('300ms', style({ transform: 'scale(1.8)', opacity: '0.5' })),
         ]),
-        query('.sprite', [
-          style({ opacity: 1 }),
-          animate('200ms', style({ transform: 'scale(0)', opacity: '0' })),
+        query('.content', [
+          style({ opacity: 1, transform: 'scale(1)' }),
+          animate('300ms', style({ transform: 'scale(0.5)', opacity: '0.5' })),
         ]),
+        animate(
+          '300ms 100ms',
+          keyframes([
+            style({
+              offset: 0,
+              top: this.row * this.height + 'px',
+              left: this.column * this.width + 'px',
+              transform: 'translate(0, 0)',
+            }),
+            style({
+              offset: 0.5,
+              transform: 'translate(20%, 70%)',
+            }),
+            style({
+              offset: 1,
+              top: '-80px',
+              left: '150px',
+              transform: 'translate(0, 0)',
+            }),
+          ])
+        ),
       ]),
     ];
     this.state = TileState.Dead;

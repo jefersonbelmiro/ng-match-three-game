@@ -20,29 +20,9 @@ const heartBeat = animation([
   animate(
     '{{duration}}ms {{delay}}ms',
     keyframes([
-      style({
-        visibility: AUTO_STYLE,
-        transform: 'scale(1)',
-        easing: 'ease-in-out',
-        offset: 0,
-      }),
-      style({
-        transform: 'scale({{scale}})',
-        easing: 'ease-in-out',
-        offset: 0.5,
-      }),
-      // style({
-      //   transform: 'scale({{scale}})',
-      //   easing: 'ease-in-out',
-      //   offset: 0.14,
-      // }),
-      // style({ transform: 'scale(1)', easing: 'ease-in-out', offset: 0.28 }),
-      // style({
-      //   transform: 'scale({{scale}})',
-      //   easing: 'ease-in-out',
-      //   offset: 0.42,
-      // }),
-      style({ transform: 'scale(1)', easing: 'ease-in-out', offset: 0.7 }),
+      style({ transform: 'scale(1)', offset: 0 }),
+      style({ transform: 'scale({{scale}})', offset: 0.5 }),
+      style({ transform: 'scale(1)', easing: 'ease-in-out', offset: 1 }),
     ])
   ),
 ]);
@@ -56,14 +36,14 @@ const heartBeat = animation([
       transition(':increment', [useAnimation(heartBeat)], {
         params: {
           duration: 300,
-          scale: 1.4,
+          scale: 1.8,
           delay: 0,
         },
       }),
       transition(':decrement', [useAnimation(heartBeat)], {
         params: {
           duration: 300,
-          scale: 1.4,
+          scale: 1.8,
           delay: 0,
         },
       }),
