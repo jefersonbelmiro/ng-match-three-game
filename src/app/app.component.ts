@@ -9,7 +9,7 @@ export class AppComponent {
   width = 400;
   height = 400;
 
-  backgroundUrl = "assets/game_background_3/game_background_3.1.png";
+  backgroundUrl = 'assets/game_background_3/game_background_3.1.png';
 
   constructor() {
     this.updateSize();
@@ -23,6 +23,12 @@ export class AppComponent {
   @HostListener('window:orientationchange')
   onOrientationChange() {
     this.updateSize();
+  }
+
+  @HostListener('window:contextmenu', ['$event']) onContextMenu(event: MouseEvent) {
+    event.preventDefault();
+    event.stopPropagation();
+    return false;
   }
 
   updateSize() {
