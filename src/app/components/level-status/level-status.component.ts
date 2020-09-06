@@ -1,4 +1,4 @@
-import { Component, Input } from '@angular/core';
+import { Component, Input, OnChanges, SimpleChanges } from '@angular/core';
 import {
   faStar,
   faArrowsAlt,
@@ -34,23 +34,20 @@ const heartBeat = animation([
   animations: [
     trigger('valueAnimation', [
       transition(':increment', [useAnimation(heartBeat)], {
-        params: {
-          duration: 300,
-          scale: 1.8,
-          delay: 0,
-        },
+        params: { duration: 300, scale: 1.5, delay: 0 },
       }),
       transition(':decrement', [useAnimation(heartBeat)], {
-        params: {
-          duration: 300,
-          scale: 1.8,
-          delay: 0,
-        },
+        params: { duration: 300, scale: 1.5, delay: 0 },
+      }),
+    ]),
+    trigger('targetAnimation', [
+      transition(':decrement', [useAnimation(heartBeat)], {
+        params: { duration: 300, scale: 1.5, delay: 800 },
       }),
     ]),
   ],
 })
-export class LevelStatusComponent {
+export class LevelStatusComponent implements OnChanges {
   @Input() target = [];
   @Input() score = 0;
   @Input() moves = 0;
@@ -66,5 +63,10 @@ export class LevelStatusComponent {
 
   getSprite(type: string) {
     return Monsters[type];
+  }
+
+  ngOnChanges(changes: SimpleChanges) {
+    if (changes.target) {
+    }
   }
 }

@@ -81,11 +81,13 @@ export class BoardService {
   }
 
   removeAt({ row, column }: Position) {
-    const data = this.getAt({ row, column });
+    this.data[row][column] = null;
+  }
+
+  destroyData(data: Tile) {
     const ref = this.dataRef.get(data);
     if (ref) {
       ref.destroy();
     }
-    this.data[row][column] = null;
   }
 }

@@ -16,6 +16,6 @@ export interface Tile {
   state: TileState;
   alive?: boolean;
   idle?: boolean;
-  die(): Observable<void>;
+  die(animation?: 'die' | 'target'): Observable<void>;
   shift(target: Position): Observable<void>;
 }

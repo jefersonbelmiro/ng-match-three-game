@@ -65,7 +65,7 @@ export class MatchService {
   }
 
   private getSameTypeByDirection(tile: Tile, moves: BoardMove) {
-    if (!tile.alive) {
+    if (!tile?.alive) {
       return [];
     }
     const result = [];

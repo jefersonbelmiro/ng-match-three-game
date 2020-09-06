@@ -5,9 +5,9 @@
   </div>
 
   <div class="target">
-    <div class="target-item" *ngFor="let item of target">
+    <div class="target-item" *ngFor="let item of target"  [@targetAnimation]="item.remain">
       <img class="type" [src]="getSprite(item.type)" />
-      <div class="remain" [@valueAnimation]="item.remain">
+      <div class="remain">
         <span *ngIf="item.remain > 0">x{{ item.remain }}</span>
         <span *ngIf="item.remain <= 0">
           <fa-icon [icon]="icons.check"></fa-icon>

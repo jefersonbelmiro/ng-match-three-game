@@ -9,8 +9,8 @@ import {
   style,
 } from '@angular/animations';
 import { Component, ElementRef, Input } from '@angular/core';
-import { Observable } from 'rxjs';
-import { tap } from 'rxjs/operators';
+import { Observable, of, Subscriber } from 'rxjs';
+import { tap, finalize, delay } from 'rxjs/operators';
 import { BoardService } from '../../services/board.service';
 import { Colors, Position, TileState, Tile, Monsters } from '../../shared';
 
@@ -147,48 +147,62 @@ export class TileComponent implements Tile {
     ];
   }
 
-  die() {
+  die(animation: 'die' | 'target' = 'die') {
+    let translateX = '0';
+    const left = this.column * this.width;
+    if (left > 160) {
+      translateX = '40%';
+    }
+    if (left < 140) {
+      translateX = '-40%';
+    }
+
+    const targetAnimation = animate(
+      '600ms 200ms',
+      keyframes([
+        style({
+          offset: 0,
+          top: this.row * this.height + 'px',
+          left: this.column * this.width + 'px',
+          transform: 'translate(0, 0)',
+        }),
+        style({
+          offset: 0.3,
+          transform: `translate(${translateX}, 80%)`,
+        }),
+        style({
+          offset: 1,
+          top: '-80px',
+          left: '150px',
+          transform: 'translate(0, 0)',
+        }),
+      ])
+    );
+
     const animations = [
       style({ zIndex: 5 }),
       group([
-        query('.glow', [
-          style({ opacity: 1 }),
-          animate('300ms', style({ transform: 'scale(1.8)', opacity: '0.5' })),
-        ]),
+        query('.glow', [animate('300ms', style({ transform: 'scale(1.8)' }))]),
         query('.content', [
           style({ opacity: 1, transform: 'scale(1)' }),
-          animate('300ms', style({ transform: 'scale(0.5)', opacity: '0.5' })),
+          animate('300ms 200ms', style({ transform: 'scale(0.5)' })),
         ]),
-        animate(
-          '300ms 100ms',
-          keyframes([
-            style({
-              offset: 0,
-              top: this.row * this.height + 'px',
-              left: this.column * this.width + 'px',
-              transform: 'translate(0, 0)',
-            }),
-            style({
-              offset: 0.5,
-              transform: 'translate(20%, 70%)',
-            }),
-            style({
-              offset: 1,
-              top: '-80px',
-              left: '150px',
-              transform: 'translate(0, 0)',
-            }),
-          ])
-        ),
+        ...animation === 'target' ? [targetAnimation] : [],
       ]),
     ];
     this.state = TileState.Dead;
-    return this.animate(animations).pipe(
-      tap(() => {
-        this.visible = false;
+
+    return new Observable((subscribe: Subscriber<void>) => {
+      setTimeout(() => {
         this.board.removeAt(this);
-      })
-    );
+        subscribe.next();
+        subscribe.complete();
+      }, 500);
+
+      this.animate(animations).subscribe(() => {
+        this.board.destroyData(this as Tile);
+      });
+    });
   }
 
   animate(
@@ -198,9 +212,9 @@ export class TileComponent implements Tile {
       const factory = this.builder.build(animation);
       const player = factory.create(this.elementRef.nativeElement);
       player.onDone(() => {
-        player.destroy();
         subscribe.next();
         subscribe.complete();
+        player.destroy();
       });
       player.play();
     });

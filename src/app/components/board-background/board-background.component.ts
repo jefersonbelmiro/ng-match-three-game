@@ -43,7 +43,8 @@ export class BoardBackgroundComponent implements AfterViewInit {
 
     for (let row = 0; row < this.rows; row++) {
       for (let column = 0; column < this.columns; column++) {
-        context.fillStyle = (row + column) % 2 == 0 ? 'rgba(0,0,0, 0.1)' : 'rgba(0, 0, 0, 0.6)';
+        // context.fillStyle = (row + column) % 2 == 0 ? 'rgba(0,0,0, 0.1)' : 'rgba(0, 0, 0, 0.6)';
+        context.fillStyle = 'rgba(0,0,0, 0.6)';
         context.fillRect(column * width, row * height, width, height);
 
         context.beginPath();
@@ -55,7 +56,6 @@ export class BoardBackgroundComponent implements AfterViewInit {
   }
 
   ngAfterViewInit(): void {
-    console.log('ngAfterViewInit')
     this.viewInit = true;
     this.update();
   }

@@ -72,7 +72,7 @@ export class LevelService extends Store<State> {
 
   isTargetType(type: Colors) {
     const target = this.getValue().target;
-    return target.find((item) => item.type === type);
+    return target.find((item) => item.type === type && item.remain > 0);
   }
 
   updateTarget(type: Colors, length: number) {

@@ -15,7 +15,7 @@ import { TileService } from '../../services/tile.service';
 import { Board, Position, Tile, Colors } from '../../shared';
 import { LevelService } from '../../services/level.service';
 
-const DEFAULT_SIZE = 400;
+const DEFAULT_SIZE = 350;
 
 @Component({
   selector: 'app-play',
@@ -110,9 +110,9 @@ export class PlayComponent implements OnInit, OnChanges {
   processMatches(matches: Tile[]) {
     this.state.setBusy(true);
 
-    this.updateLevel(matches);
+    const deaths = this.updateLevel(matches);
 
-    const deaths = matches.map((tile) => tile.die());
+    // const deaths = matches.map((tile) => tile.die());
     forkJoin(deaths.length ? deaths : EMPTY)
       .pipe(
         switchMap(() => this.fillBoard()),
@@ -124,28 +124,32 @@ export class PlayComponent implements OnInit, OnChanges {
   }
 
   updateLevel(matches: Tile[]) {
+    const deaths = [];
     const types = matches
       .filter((item, index, array) => {
         return array.indexOf(item) === index;
       })
       .reduce((data, current: Tile) => {
-        console.log('data', current.type, current.row, current.column);
         if (!data[current.type]) {
           data[current.type] = 0;
+        }
+        if (this.level.isTargetType(current.type as Colors)) {
+          deaths.push(current.die('target'));
+        } else {
+          deaths.push(current.die());
         }
         data[current.type] += 1;
         return data;
       }, {});
 
     Object.keys(types).forEach((type) => {
-      console.log('matchs', type, types[type]);
       if (this.level.isTargetType(type as Colors)) {
         this.level.updateTarget(type as Colors, types[type]);
       }
       this.level.updateScore();
     });
 
-    console.log('matchs types', types);
+    return deaths;
   }
 
   fillBoard() {
