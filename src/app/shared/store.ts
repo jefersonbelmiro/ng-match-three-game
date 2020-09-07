@@ -20,4 +20,8 @@ export class Store<T = any> {
   setState(next: T): void {
     this.state.next(next);
   }
+
+  set(data: Partial<T>) {
+    this.setState({ ...this.getValue(), ...data });
+  }
 }

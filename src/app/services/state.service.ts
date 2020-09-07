@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { Store } from '../shared';
+import { Store, Tile } from '../shared';
 
 const INITIAL_STATE = {
   busy: 0,
@@ -7,6 +7,7 @@ const INITIAL_STATE = {
 
 export interface State {
   busy: number;
+  selected?: Tile;
 }
 
 @Injectable({

@@ -1,8 +1,17 @@
-import { animate, AnimationBuilder, AnimationMetadata, group, keyframes, query, style } from '@angular/animations';
+import {
+  animate,
+  AnimationBuilder,
+  AnimationMetadata,
+  group,
+  keyframes,
+  query,
+  style,
+} from '@angular/animations';
 import { Component, ElementRef, Input } from '@angular/core';
 import { Observable, Subscriber } from 'rxjs';
 import { tap } from 'rxjs/operators';
 import { BoardService } from '../../services/board.service';
+import { StateService } from '../../services/state.service';
 import { Colors, Monsters, Position, Tile, TileState } from '../../shared';
 
 const random = (min: number, max: number) => {
@@ -39,10 +48,24 @@ export class TileComponent implements Tile {
   constructor(
     private builder: AnimationBuilder,
     private elementRef: ElementRef,
-    private board: BoardService
+    private board: BoardService,
+    private globalState: StateService
   ) {}
 
-  ngOnInit() {}
+  ngOnInit() {
+    this.globalState.getState().subscribe((value) => {
+      const element = this.elementRef.nativeElement as HTMLElement;
+      element.classList.toggle(
+        'no-selected',
+        !!(value.selected && value.selected !== this)
+      );
+      element.classList.toggle('selected', value.selected === this);
+      element.classList.toggle(
+        'selected-adjacent',
+        this.isAdjacent(value.selected)
+      );
+    });
+  }
 
   get color() {
     const index = monsters.indexOf(this.type);
@@ -178,27 +201,33 @@ export class TileComponent implements Tile {
       style({ zIndex: 5 }),
       group([
         query('.glow', [
-          animate(timeGlowAnim, keyframes([
-            style({ offset: 0, opacity: 1, transform: 'scale(1)' }),
-            style({ offset: 0.7, transform: 'scale(1.8)' }),
-            style({ offset: 1, transform: 'scale(0.5)' }),
-          ]))
+          animate(
+            timeGlowAnim,
+            keyframes([
+              style({ offset: 0, opacity: 1, transform: 'scale(1)' }),
+              style({ offset: 0.7, transform: 'scale(1.8)' }),
+              style({ offset: 1, transform: 'scale(0.5)' }),
+            ])
+          ),
         ]),
         query('.sprite', [
           style({ opacity: 1, transform: 'scale(1)' }),
           animate(timeSpriteAnim, style({ transform: 'scale(0.5)' })),
         ]),
-        ...isTargetAnim ? [targetAnimation] : [],
+        ...(isTargetAnim ? [targetAnimation] : []),
       ]),
     ];
     this.state = TileState.Dead;
 
     return new Observable((subscribe: Subscriber<void>) => {
-      setTimeout(() => {
-        this.board.removeAt(this);
-        subscribe.next();
-        subscribe.complete();
-      }, isTargetAnim ? 500 : 200);
+      setTimeout(
+        () => {
+          this.board.removeAt(this);
+          subscribe.next();
+          subscribe.complete();
+        },
+        isTargetAnim ? 500 : 200
+      );
 
       this.animate(animations).subscribe(() => {
         this.board.destroyData(this as Tile);
@@ -220,4 +249,17 @@ export class TileComponent implements Tile {
       player.play();
     });
   }
+
+  private isAdjacent(position: Position) {
+    if (
+      !position ||
+      (this.column !== position.column && this.row !== position.row)
+    ) {
+      return false;
+    }
+    const column = Math.abs(position.column - this.column);
+    const row = Math.abs(position.row - this.row);
+    return Math.max(column, row) <= 1;
+  }
+
 }

@@ -1,24 +1,24 @@
 import { Injectable } from '@angular/core';
 import { BoardService } from './board.service';
-import { Tile } from '../shared';
+import { Tile, Store } from '../shared';
 import { StateService } from './state.service';
+
+interface State {
+  element?: HTMLElement;
+  pointer?: { x: number; y: number };
+  source?: Tile;
+}
 
 @Injectable({
   providedIn: 'root',
 })
-export class InputService {
-  private state: {
-    element?: HTMLElement;
-    pointer?: { x: number; y: number };
-    source?: Tile;
-  };
-
+export class InputService extends Store<State> {
   constructor(private board: BoardService, private globalState: StateService) {
-    this.state = {};
+    super({});
   }
 
   setElement(element: HTMLElement) {
-    this.state = { ...this.state, element };
+    this.set({ element });
   }
 
   onDown(event: MouseEvent) {
@@ -26,7 +26,7 @@ export class InputService {
       return;
     }
     const pointer = this.getPointer(event);
-    const rect = this.state.element.getBoundingClientRect();
+    const rect = this.getValue().element.getBoundingClientRect();
     const width = this.board.width / this.board.columns;
     const height = this.board.height / this.board.rows;
     const column = Math.floor((pointer.x - rect.left) / width);
@@ -37,13 +37,13 @@ export class InputService {
       return;
     }
 
-    this.state.pointer = pointer;
-    this.state.source = source;
+    this.set({ pointer, source });
+    this.globalState.set({ selected: source });
     return source;
   }
 
   onMove(event: MouseEvent) {
-    const { pointer, source } = this.state;
+    const { pointer, source } = this.getValue();
     if (!pointer || !source || this.globalState.isBusy()) {
       return;
     }
@@ -69,8 +69,8 @@ export class InputService {
 
     const target = this.board.getAt({ row, column });
 
-    this.state.pointer = null;
-    this.state.source = null;
+    this.set({ pointer: null, source: null });
+    this.globalState.set({ selected: null });
 
     if (!target || !target.idle) {
       return;

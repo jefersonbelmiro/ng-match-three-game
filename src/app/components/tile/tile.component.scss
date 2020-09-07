@@ -2,6 +2,25 @@
   padding: 3px;
   position: absolute;
 
+  &.no-selected {
+    .sprite {
+      opacity: 0.3;
+    }
+  }
+
+  &.selected {
+    border: 1px solid white !important;
+    .sprite {
+      opacity: 1;
+    }
+  }
+
+  &.selected-adjacent {
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    .sprite {
+      opacity: 1;
+    }
+  }
   user-select: none;
 
   cursor: pointer;
