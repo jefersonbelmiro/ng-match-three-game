@@ -7,20 +7,24 @@
   cursor: pointer;
 
   .content {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    width: 100%;
+
     .sprite {
-      z-index: 20;
       z-index: 2;
-      position: absolute;
-      left: 10%;
-      top: 15%;
-      width: 80%;
     }
 
     .glow {
       width: 100%;
       height: 100%;
       z-index: 1;
-      opacity: 1;
+      opacity: 0.5;
+      position: absolute;
+      top: 0;
+      left: 0;
     }
 
     // .ground {

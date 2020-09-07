@@ -12,16 +12,23 @@ export enum Colors {
 }
 
 export enum Monsters {
-  Octopus = 'assets/Octopus/Octopus_1.png',
-  Spider = 'assets/Spider/Spider_1.png',
-  Lizard = 'assets/Lizard/Lizard_1.png',
-  Sheep = 'assets/Sheep/Sheep_1.png',
-  Rabbit = 'assets/Rabbit/Rabbit_1.png',
-  Owl = 'assets/Owl/Owl_1.png',
-  Dragon = 'assets/Dragon/Head_1.png',
-  Pig = 'assets/Pig/Pig_1.png',
-  Rainbow = 'assets/Rainbow/Rainbow_1.png',
-  Cat = 'assets/Cat/Cat_1.png',
-  Unicorn = 'assets/Unicorn/Unicorn_1.png',
+
+  Unicorn = 'assets/monsters/unicorn/Unicorn_1.png',
+  Rabbit = 'assets/monsters/rabbit/Rabbit_1.png',
+  Pig = 'assets/monsters/pig/Pig_1.png',
+
+  Spider = 'assets/monsters/spider/Spider_1.png',
+  Octopus = 'assets/monsters/octopus/Octopus_1.png',
+  Owl = 'assets/monsters/owl/Owl_1.png',
+
+  Sheep = 'assets/monsters/sheep/Sheep_1.png',
+
+
+  Lizard = 'assets/monsters/lizard/Lizard_1.png',
+
+  Cat = 'assets/monsters/cat/Cat_1.png',
+
+  Rainbow = 'assets/monsters/rainbow/Rainbow_1.png',
+  Dragon = 'assets/monsters/dragon/Head_1.png',
 }
 

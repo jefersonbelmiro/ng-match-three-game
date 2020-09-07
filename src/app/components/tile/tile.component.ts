@@ -1,18 +1,9 @@
-import {
-  animate,
-  AnimationBuilder,
-  AnimationMetadata,
-  group,
-  keyframes,
-  query,
-  sequence,
-  style,
-} from '@angular/animations';
+import { animate, AnimationBuilder, AnimationMetadata, group, keyframes, query, style } from '@angular/animations';
 import { Component, ElementRef, Input } from '@angular/core';
-import { Observable, of, Subscriber } from 'rxjs';
-import { tap, finalize, delay } from 'rxjs/operators';
+import { Observable, Subscriber } from 'rxjs';
+import { tap } from 'rxjs/operators';
 import { BoardService } from '../../services/board.service';
-import { Colors, Position, TileState, Tile, Monsters } from '../../shared';
+import { Colors, Monsters, Position, Tile, TileState } from '../../shared';
 
 const random = (min: number, max: number) => {
   return Math.floor(Math.random() * (max - min + 1) + min);
@@ -59,7 +50,7 @@ export class TileComponent implements Tile {
   }
 
   get glowUrl() {
-    return `assets/Items-effects/Glow/${this.type}.png`;
+    return `assets/items-effects/glow/${this.type}.png`;
   }
 
   get image() {
@@ -157,6 +148,10 @@ export class TileComponent implements Tile {
       translateX = '-40%';
     }
 
+    const isTargetAnim = animation === 'target';
+    const timeSpriteAnim = isTargetAnim ? '300ms 200ms' : '200ms';
+    const timeGlowAnim = isTargetAnim ? '600ms' : '200ms';
+
     const targetAnimation = animate(
       '600ms 200ms',
       keyframes([
@@ -182,12 +177,18 @@ export class TileComponent implements Tile {
     const animations = [
       style({ zIndex: 5 }),
       group([
-        query('.glow', [animate('300ms', style({ transform: 'scale(1.8)' }))]),
-        query('.content', [
-          style({ opacity: 1, transform: 'scale(1)' }),
-          animate('300ms 200ms', style({ transform: 'scale(0.5)' })),
+        query('.glow', [
+          animate(timeGlowAnim, keyframes([
+            style({ offset: 0, opacity: 1, transform: 'scale(1)' }),
+            style({ offset: 0.7, transform: 'scale(1.8)' }),
+            style({ offset: 1, transform: 'scale(0.5)' }),
+          ]))
         ]),
-        ...animation === 'target' ? [targetAnimation] : [],
+        query('.sprite', [
+          style({ opacity: 1, transform: 'scale(1)' }),
+          animate(timeSpriteAnim, style({ transform: 'scale(0.5)' })),
+        ]),
+        ...isTargetAnim ? [targetAnimation] : [],
       ]),
     ];
     this.state = TileState.Dead;
@@ -197,7 +198,7 @@ export class TileComponent implements Tile {
         this.board.removeAt(this);
         subscribe.next();
         subscribe.complete();
-      }, 500);
+      }, isTargetAnim ? 500 : 200);
 
       this.animate(animations).subscribe(() => {
         this.board.destroyData(this as Tile);
