@@ -2,17 +2,17 @@
   padding: 3px;
   position: absolute;
 
-  &.no-selected {
-    .sprite {
-      opacity: 0.3;
-    }
-  }
+  // &.no-selected {
+    // .sprite {
+    //   opacity: 0.3;
+    // }
+  // }
 
   &.selected {
     border: 1px solid white !important;
-    .sprite {
-      opacity: 1;
-    }
+    // .sprite {
+    //   opacity: 1;
+    // }
   }
 
   &.selected-adjacent {
@@ -34,6 +34,13 @@
 
     .sprite {
       z-index: 2;
+
+      position: relative;
+      overflow: hidden;
+      width: 60px;
+      height: 60px;
+      display: flex;
+      align-items: center;
     }
 
     .glow {

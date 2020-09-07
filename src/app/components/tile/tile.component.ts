@@ -8,7 +8,7 @@ import {
   style,
 } from '@angular/animations';
 import { Component, ElementRef, Input } from '@angular/core';
-import { Observable, Subscriber } from 'rxjs';
+import { Observable, Subscriber, timer } from 'rxjs';
 import { tap } from 'rxjs/operators';
 import { BoardService } from '../../services/board.service';
 import { StateService } from '../../services/state.service';
@@ -44,6 +44,8 @@ export class TileComponent implements Tile {
   @Input() visible = true;
 
   state = TileState.Idle;
+  spriteUrl: string;
+  glowUrl: string;
 
   constructor(
     private builder: AnimationBuilder,
@@ -64,31 +66,37 @@ export class TileComponent implements Tile {
         'selected-adjacent',
         this.isAdjacent(value.selected)
       );
+      if (value.selected === this) {
+        this.createSelectAnimation();
+      }
     });
+
+    timer(2000, 500).subscribe((it) => {
+      if (Math.floor(Math.random() * 100) <= 5) {
+        this.createSelectAnimation();
+      }
+    });
+
+    this.glowUrl = `assets/items-effects/glow/${this.type}.png`;
+    this.spriteUrl = `assets/monsters/${this.type.toLowerCase()}/sprite.png`;
   }
 
-  get color() {
-    const index = monsters.indexOf(this.type);
-    return colors[index];
-  }
-
-  get glowUrl() {
-    return `assets/items-effects/glow/${this.type}.png`;
-  }
-
-  get image() {
-    return Monsters[this.type];
-    // return 'assets/Cat/Cat_1.png';
-    // return 'assets/Dragon/Head_1.png';
-    // return 'assets/Lizard/Lizard_1.png';
-    // return 'assets/Octopus/Octopus_1.png';
-    // return 'assets/Owl/Owl_1.png';
-    // return 'assets/Pig/Pig_1.png';
-    // return 'assets/Rabbit/Rabbit_1.png';
-    // return 'assets/Rainbow/Rainbow_1.png';
-    // return 'assets/Sheep/Sheep_1.png';
-    // return 'assets/Spider/Spider_1.png';
-    // return 'assets/Unicorn/Unicorn_1.png';
+  private createSelectAnimation() {
+    const animation = query('.sprite img', [
+      animate(
+        '400ms steps(3)',
+        keyframes([
+          style({ offset: 0, transform: `translateX(0)` }),
+          style({ offset: 1, transform: `translateX(-180px)` }),
+        ])
+      ),
+    ]);
+    const factory = this.builder.build(animation);
+    const player = factory.create(this.elementRef.nativeElement);
+    player.play();
+    player.onDone(() => {
+      player.destroy();
+    });
   }
 
   get alive(): boolean {
@@ -100,19 +108,23 @@ export class TileComponent implements Tile {
   }
 
   shift({ row, column }: Position) {
+    const translateX =  (column * this.width) - (this.column * this.width);
+    const translateY =  (row * this.height) - (this.row * this.height);
     const from = {
-      left: this.column * this.width + 'px',
-      top: this.row * this.height + 'px',
+      // left: this.column * this.width + 'px',
+      // top: this.row * this.height + 'px',
+      transform: 'translate(0, 0)',
       zIndex: 5,
     };
     const to = {
-      left: column * this.width + 'px',
-      top: row * this.height + 'px',
+      // left: column * this.width + 'px',
+      // top: row * this.height + 'px',
+      transform: `translate(${translateX}px, ${translateY}px)`,
       zIndex: 5,
     };
 
-    const falling = this.row < 0;
-    const speed = random(150, 250);
+    // const falling = this.row < 0;
+    // const speed = random(150, 250);
 
     const animations = [
       group([
@@ -226,7 +238,7 @@ export class TileComponent implements Tile {
           subscribe.next();
           subscribe.complete();
         },
-        isTargetAnim ? 500 : 200
+        isTargetAnim ? 400 : 200
       );
 
       this.animate(animations).subscribe(() => {
@@ -261,5 +273,4 @@ export class TileComponent implements Tile {
     const row = Math.abs(position.row - this.row);
     return Math.max(column, row) <= 1;
   }
-
 }
