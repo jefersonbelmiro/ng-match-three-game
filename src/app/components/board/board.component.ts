@@ -51,4 +51,9 @@ export class BoardComponent implements Board, OnInit {
       this.swap.emit(target);
     }
   }
+
+  @HostListener('touchend', ['$event'])
+  onTouchend(event: MouseEvent) {
+    event.preventDefault();
+  }
 }
