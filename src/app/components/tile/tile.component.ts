@@ -67,13 +67,13 @@ export class TileComponent implements Tile {
         this.isAdjacent(value.selected)
       );
       if (value.selected === this) {
-        this.createSelectAnimation();
+        this.createSelectionAnimation();
       }
     });
 
-    timer(2000, 500).subscribe((it) => {
-      if (Math.floor(Math.random() * 100) <= 5) {
-        this.createSelectAnimation();
+    timer(2000, 2000).subscribe(() => {
+      if (Math.floor(Math.random() * 100) <= 1) {
+        this.createIdleAnimation();
       }
     });
 
@@ -81,13 +81,34 @@ export class TileComponent implements Tile {
     this.spriteUrl = `assets/monsters/${this.type.toLowerCase()}/sprite.png`;
   }
 
-  private createSelectAnimation() {
+  private createIdleAnimation() {
     const animation = query('.sprite img', [
       animate(
         '400ms steps(3)',
         keyframes([
           style({ offset: 0, transform: `translateX(0)` }),
           style({ offset: 1, transform: `translateX(-180px)` }),
+        ])
+      ),
+    ]);
+    const factory = this.builder.build(animation);
+    const player = factory.create(this.elementRef.nativeElement);
+    player.play();
+    player.onDone(() => {
+      player.destroy();
+    });
+  }
+
+  private createSelectionAnimation() {
+    const animation = query('.sprite img', [
+      animate(
+        '400ms',
+        keyframes([
+          style({ easing: 'steps(1)', transform: `translateX(-240px)` }),
+          style({ easing: 'steps(1)', transform: `translateX(-300px)` }),
+          style({ easing: 'steps(1)', transform: `translateX(-360px)` }),
+          style({ easing: 'steps(1)', transform: `translateX(-420px)` }),
+          style({ easing: 'steps(1)', transform: `translateX(-480px)` }),
         ])
       ),
     ]);
