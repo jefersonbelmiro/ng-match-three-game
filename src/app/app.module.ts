@@ -8,6 +8,7 @@ import { TileComponent } from './components/tile/tile.component';
 import { PlayComponent } from './containers/play/play.component';
 import { LevelStatusComponent } from './components/level-status/level-status.component';
 import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
+import { PowerUpsComponent } from './components/power-ups/power-ups.component';
 
 @NgModule({
   declarations: [
@@ -17,6 +18,7 @@ import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
     PlayComponent,
     BoardBackgroundComponent,
     LevelStatusComponent,
+    PowerUpsComponent,
   ],
   imports: [BrowserModule, BrowserAnimationsModule, FontAwesomeModule],
   providers: [],

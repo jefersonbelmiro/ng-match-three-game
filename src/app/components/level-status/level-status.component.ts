@@ -1,19 +1,19 @@
-import { Component, Input, OnChanges, SimpleChanges } from '@angular/core';
 import {
-  faStar,
-  faArrowsAlt,
-  faCheck,
-  faStopwatch,
-} from '@fortawesome/free-solid-svg-icons';
-import {
-  trigger,
+  animate,
   animation,
   keyframes,
-  AUTO_STYLE,
+  style,
+  transition,
+  trigger,
   useAnimation,
 } from '@angular/animations';
-import { transition } from '@angular/animations';
-import { query, style, group, animate } from '@angular/animations';
+import { Component, Input, OnChanges, SimpleChanges } from '@angular/core';
+import {
+  faArrowsAlt,
+  faCheck,
+  faStar,
+  faStopwatch,
+} from '@fortawesome/free-solid-svg-icons';
 import { Monsters } from '../../shared';
 
 const heartBeat = animation([
