@@ -25,21 +25,29 @@ export class InputService extends Store<State> {
     if (this.globalState.isBusy()) {
       return;
     }
+
+    const { source } = this.getValue();
     const pointer = this.getPointer(event);
     const rect = this.getValue().element.getBoundingClientRect();
     const width = this.board.width / this.board.columns;
     const height = this.board.height / this.board.rows;
     const column = Math.floor((pointer.x - rect.left) / width);
     const row = Math.floor((pointer.y - rect.top) / height);
-    const source = this.board.getAt({ row, column });
+    const target = this.board.getAt({ row, column });
 
-    if (!source || !source.idle) {
+    if (!target || !target.idle) {
       return;
     }
 
-    this.set({ pointer, source });
-    this.globalState.set({ selected: source });
-    return source;
+    this.set({ pointer, source: target });
+    this.globalState.set({ selected: target });
+
+    if (source && this.board.isAdjacent(source, target)) {
+      this.set({ source: null });
+      return { source, target };
+    }
+
+    return { source: null, target };
   }
 
   onMove(event: MouseEvent) {
@@ -76,6 +84,10 @@ export class InputService extends Store<State> {
       return;
     }
     return { source, target };
+  }
+
+  onUp() {
+    this.set({ pointer: null });
   }
 
   private getPointer(event: MouseEvent | TouchEvent) {

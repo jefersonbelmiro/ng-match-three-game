@@ -17,5 +17,7 @@ body {
   position: fixed;
   top: 0;
   left: 0;
+  // this causes scrolling left at the left-end of the page
+  // to no longer trigger a backward history-navigation.
   overscroll-behavior: contain;
 }

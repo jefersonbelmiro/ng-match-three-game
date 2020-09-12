@@ -37,23 +37,33 @@ export class BoardComponent implements Board, OnInit {
   @HostListener('mousedown', ['$event'])
   @HostListener('touchstart', ['$event'])
   onInputDown(event: MouseEvent) {
-    const source = this.input.onDown(event);
-    if (source) {
-      this.select.emit(source);
+    const data = this.input.onDown(event);
+    if (!data) {
+      return;
+    }
+    if (!data.source) {
+      this.select.emit(data.target);
+    } else {
+      this.swap.emit(data);
     }
   }
 
   @HostListener('mousemove', ['$event'])
   @HostListener('touchmove', ['$event'])
   onMouseMove(event: MouseEvent) {
-    const target = this.input.onMove(event);
-    if (target) {
-      this.swap.emit(target);
+    const data = this.input.onMove(event);
+    if (data) {
+      this.swap.emit(data);
     }
   }
 
   @HostListener('touchend', ['$event'])
   onTouchend(event: MouseEvent) {
     event.preventDefault();
+  }
+
+  @HostListener('mouseup')
+  onInputUp() {
+    this.input.onUp();
   }
 }
