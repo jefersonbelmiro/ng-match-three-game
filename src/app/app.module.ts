@@ -9,6 +9,8 @@ import { PlayComponent } from './containers/play/play.component';
 import { LevelStatusComponent } from './components/level-status/level-status.component';
 import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
 import { PowerUpsComponent } from './components/power-ups/power-ups.component';
+import { EffectScoreComponent } from './components/effect-score/effect-score.component';
+import { SpriteComponent } from './components/sprite/sprite.component';
 
 @NgModule({
   declarations: [
@@ -19,6 +21,8 @@ import { PowerUpsComponent } from './components/power-ups/power-ups.component';
     BoardBackgroundComponent,
     LevelStatusComponent,
     PowerUpsComponent,
+    EffectScoreComponent,
+    SpriteComponent,
   ],
   imports: [BrowserModule, BrowserAnimationsModule, FontAwesomeModule],
   providers: [],

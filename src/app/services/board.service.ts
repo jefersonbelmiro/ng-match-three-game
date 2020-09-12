@@ -6,14 +6,8 @@ import { Board, Position, Tile } from '../shared';
 })
 export class BoardService {
   data: Tile[][] = [];
-  dataRef: WeakMap<Tile, ComponentRef<Tile>>;
-  createTileFactory: (
-    board: Board
-  ) => (position: Position) => ComponentRef<Tile>;
-  updateTileFactory: (board: Board) => (position: Position) => Tile;
-
-  createTile: (position: Position) => ComponentRef<Tile>;
-  updateTile: (data: Partial<Tile>) => Tile;
+  createTile: (board: Board, position: Position) => ComponentRef<Tile>;
+  destroyTile: (data: Tile) => void;
   rows: number;
   columns: number;
   height: number;
@@ -21,18 +15,14 @@ export class BoardService {
 
   constructor() {}
 
-  create(board: Board, { createTileFactory, updateTileFactory }) {
+  create(board: Board, { createTile, destroyTile }) {
     this.data = [];
-    this.dataRef = new WeakMap();
     this.rows = board.rows;
     this.columns = board.columns;
     this.width = board.width;
     this.height = board.height;
-    this.createTileFactory = createTileFactory;
-    this.updateTileFactory = updateTileFactory;
-
-    this.createTile = this.createTileFactory(board);
-    this.updateTile = this.updateTileFactory(board);
+    this.createTile = createTile;
+    this.destroyTile = destroyTile;
 
     for (let row = 0; row < this.rows; row++) {
       this.data[row] = [];
@@ -45,27 +35,22 @@ export class BoardService {
   update(board: Board) {
     this.width = board.width;
     this.height = board.height;
-    this.updateTile = this.updateTileFactory(board);
-    this.createTile = this.createTileFactory(board);
     for (let row = 0; row < this.data.length; row++) {
       const columns = this.data[row];
       for (let column = 0; column < columns.length; column++) {
-        this.updateAt({ row, column }, this.getAt({ row, column }));
+        const tile = this.getAt({ row, column });
+        if (tile) {
+          const width = board.width / board.columns;
+          const height = board.height / board.rows;
+          Object.assign(tile, { width, height });
+        }
       }
     }
   }
 
-  updateAt(position: Position, data: Partial<Tile>) {
-    const tile = this.getAt(position);
-    if (tile) {
-      Object.assign(tile, this.updateTile(data));
-    }
-  }
-
   crateAt(position: Position) {
-    const ref = this.createTile(position);
+    const ref = this.createTile(this, position);
     this.setAt(position, ref.instance);
-    this.dataRef.set(ref.instance, ref);
     return ref.instance;
   }
 
@@ -85,9 +70,18 @@ export class BoardService {
   }
 
   destroyData(data: Tile) {
-    const ref = this.dataRef.get(data);
-    if (ref) {
-      ref.destroy();
+    this.destroyTile(data);
+  }
+
+  isAdjacent(source: Position, target: Position) {
+    if (
+      !target ||
+      (source.column !== target.column && source.row !== target.row)
+    ) {
+      return false;
     }
+    const column = Math.abs(target.column - source.column);
+    const row = Math.abs(target.row - source.row);
+    return Math.max(column, row) <= 1;
   }
 }

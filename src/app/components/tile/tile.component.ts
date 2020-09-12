@@ -6,6 +6,8 @@ import {
   keyframes,
   query,
   style,
+  animation,
+  useAnimation,
 } from '@angular/animations';
 import { Component, ElementRef, Input } from '@angular/core';
 import { Observable, Subscriber, timer } from 'rxjs';
@@ -13,6 +15,9 @@ import { tap } from 'rxjs/operators';
 import { BoardService } from '../../services/board.service';
 import { StateService } from '../../services/state.service';
 import { Colors, Monsters, Position, Tile, TileState } from '../../shared';
+import { Sprite } from '../../shared/sprite';
+import { SpriteComponent } from '../sprite/sprite.component';
+import { targetAnimationFactory } from '../../shared/animations';
 
 const random = (min: number, max: number) => {
   return Math.floor(Math.random() * (max - min + 1) + min);
@@ -21,38 +26,68 @@ const random = (min: number, max: number) => {
 const colors = Object.keys(Colors);
 const monsters = Object.keys(Monsters);
 
+const idleAnimation = () => {
+  return animation(
+    query('.sprite img', [
+      animate(
+        '400ms steps(2)',
+        keyframes([
+          style({ offset: 0, transform: `translateX(0)` }),
+          style({ offset: 1, transform: `translateX(-120px)` }),
+        ])
+      ),
+    ])
+  );
+};
+
+const selectionAnimation = () => {
+  return animation(
+    query(
+      '.sprite img',
+      animate(
+        '400ms',
+        keyframes([
+          style({ easing: 'steps(1)', transform: `translateX(-240px)` }),
+          style({ easing: 'steps(1)', transform: `translateX(-300px)` }),
+          style({ easing: 'steps(1)', transform: `translateX(-360px)` }),
+          style({ easing: 'steps(1)', transform: `translateX(-420px)` }),
+          style({ easing: 'steps(1)', transform: `translateX(-480px)` }),
+        ])
+      )
+    )
+  );
+};
+
 @Component({
   selector: 'app-tile',
   templateUrl: './tile.component.html',
   styleUrls: ['./tile.component.scss'],
-  host: {
-    '[style.left.px]': 'column * width',
-    '[style.top.px]': 'row * height',
-    '[style.width.px]': 'width',
-    '[style.height.px]': 'height',
-    '[hidden]': '!visible',
-    '[class]': 'type',
-  },
 })
-export class TileComponent implements Tile {
+export class TileComponent extends SpriteComponent implements Tile {
   @Input() row: number;
   @Input() column: number;
-  @Input() width: number;
-  @Input() height: number;
   @Input() type: string;
 
-  @Input() visible = true;
+  get x() {
+    return this.column * this.width;
+  }
+
+  get y() {
+    return this.row * this.height;
+  }
 
   state = TileState.Idle;
   spriteUrl: string;
   glowUrl: string;
 
   constructor(
-    private builder: AnimationBuilder,
-    private elementRef: ElementRef,
-    private board: BoardService,
-    private globalState: StateService
-  ) {}
+    protected board: BoardService,
+    protected globalState: StateService,
+    protected builder: AnimationBuilder,
+    protected elementRef: ElementRef
+  ) {
+    super(elementRef, builder);
+  }
 
   ngOnInit() {
     this.globalState.getState().subscribe((value) => {
@@ -64,16 +99,16 @@ export class TileComponent implements Tile {
       element.classList.toggle('selected', value.selected === this);
       element.classList.toggle(
         'selected-adjacent',
-        this.isAdjacent(value.selected)
+        this.board.isAdjacent(this, value.selected)
       );
       if (value.selected === this) {
-        this.createSelectionAnimation();
+        this.playSelectionAnimation();
       }
     });
 
-    timer(2000, 2000).subscribe(() => {
-      if (Math.floor(Math.random() * 100) <= 1) {
-        this.createIdleAnimation();
+    timer(1000, random(500, 1500)).subscribe(() => {
+      if (this.idle && Math.floor(Math.random() * 100) <= 5) {
+        this.playIdleAnimation();
       }
     });
 
@@ -81,43 +116,12 @@ export class TileComponent implements Tile {
     this.spriteUrl = `assets/monsters/${this.type.toLowerCase()}/sprite.png`;
   }
 
-  private createIdleAnimation() {
-    const animation = query('.sprite img', [
-      animate(
-        '400ms steps(3)',
-        keyframes([
-          style({ offset: 0, transform: `translateX(0)` }),
-          style({ offset: 1, transform: `translateX(-180px)` }),
-        ])
-      ),
-    ]);
-    const factory = this.builder.build(animation);
-    const player = factory.create(this.elementRef.nativeElement);
-    player.play();
-    player.onDone(() => {
-      player.destroy();
-    });
+  private playIdleAnimation() {
+    return this.animate(idleAnimation()).subscribe();
   }
 
-  private createSelectionAnimation() {
-    const animation = query('.sprite img', [
-      animate(
-        '400ms',
-        keyframes([
-          style({ easing: 'steps(1)', transform: `translateX(-240px)` }),
-          style({ easing: 'steps(1)', transform: `translateX(-300px)` }),
-          style({ easing: 'steps(1)', transform: `translateX(-360px)` }),
-          style({ easing: 'steps(1)', transform: `translateX(-420px)` }),
-          style({ easing: 'steps(1)', transform: `translateX(-480px)` }),
-        ])
-      ),
-    ]);
-    const factory = this.builder.build(animation);
-    const player = factory.create(this.elementRef.nativeElement);
-    player.play();
-    player.onDone(() => {
-      player.destroy();
-    });
+  private playSelectionAnimation() {
+    return this.animate(selectionAnimation()).subscribe();
   }
 
   get alive(): boolean {
@@ -129,33 +133,22 @@ export class TileComponent implements Tile {
   }
 
   shift({ row, column }: Position) {
-    const translateX =  (column * this.width) - (this.column * this.width);
-    const translateY =  (row * this.height) - (this.row * this.height);
-    const from = {
-      // left: this.column * this.width + 'px',
-      // top: this.row * this.height + 'px',
-      transform: 'translate(0, 0)',
-      zIndex: 5,
-    };
-    const to = {
-      // left: column * this.width + 'px',
-      // top: row * this.height + 'px',
-      transform: `translate(${translateX}px, ${translateY}px)`,
-      zIndex: 5,
-    };
-
-    // const falling = this.row < 0;
-    // const speed = random(150, 250);
-
+    const translateX = column * this.width - this.x;
+    const translateY = row * this.height - this.y;
     const animations = [
       group([
-        style(from),
-        animate('250ms ease-in', style(to)),
-        // ...(falling ? this.rubberBandAnimation(speed, 250) : []),
+        style({ transform: 'translate(0, 0)', zIndex: 5 }),
+        animate(
+          '250ms ease-in',
+          style({
+            transform: `translate(${translateX}px, ${translateY}px)`,
+            zIndex: 5,
+          })
+        ),
       ]),
     ];
-    this.state = TileState.Shift;
 
+    this.state = TileState.Shift;
     return this.animate(animations).pipe(
       tap(() => {
         Object.assign(this, { row, column, state: TileState.Idle });
@@ -195,39 +188,15 @@ export class TileComponent implements Tile {
   }
 
   die(animation: 'die' | 'target' = 'die') {
-    let translateX = '0';
-    const left = this.column * this.width;
-    if (left > 160) {
-      translateX = '40%';
-    }
-    if (left < 140) {
-      translateX = '-40%';
-    }
-
     const isTargetAnim = animation === 'target';
     const timeSpriteAnim = isTargetAnim ? '300ms 200ms' : '200ms';
     const timeGlowAnim = isTargetAnim ? '600ms' : '200ms';
 
-    const targetAnimation = animate(
-      '600ms 200ms',
-      keyframes([
-        style({
-          offset: 0,
-          top: this.row * this.height + 'px',
-          left: this.column * this.width + 'px',
-          transform: 'translate(0, 0)',
-        }),
-        style({
-          offset: 0.3,
-          transform: `translate(${translateX}, 80%)`,
-        }),
-        style({
-          offset: 1,
-          top: '-80px',
-          left: '150px',
-          transform: 'translate(0, 0)',
-        }),
-      ])
+    const target = { x: 150, y: -80 } as Sprite;
+    const params = { params: { duration: 600, delay: 200 } };
+    const targetAnimation = useAnimation(
+      targetAnimationFactory(this, target),
+      params
     );
 
     const animations = [
@@ -266,32 +235,5 @@ export class TileComponent implements Tile {
         this.board.destroyData(this as Tile);
       });
     });
-  }
-
-  animate(
-    animation: AnimationMetadata | AnimationMetadata[]
-  ): Observable<void> {
-    return new Observable((subscribe) => {
-      const factory = this.builder.build(animation);
-      const player = factory.create(this.elementRef.nativeElement);
-      player.onDone(() => {
-        subscribe.next();
-        subscribe.complete();
-        player.destroy();
-      });
-      player.play();
-    });
-  }
-
-  private isAdjacent(position: Position) {
-    if (
-      !position ||
-      (this.column !== position.column && this.row !== position.row)
-    ) {
-      return false;
-    }
-    const column = Math.abs(position.column - this.column);
-    const row = Math.abs(position.row - this.row);
-    return Math.max(column, row) <= 1;
   }
 }

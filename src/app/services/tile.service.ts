@@ -1,10 +1,7 @@
-import {
-  ComponentFactoryResolver,
-  Injectable,
-  ViewContainerRef,
-} from '@angular/core';
+import { Injectable } from '@angular/core';
 import { TileComponent } from '../components/tile/tile.component';
-import { Board, Colors, Tile, Position, Monsters } from '../shared';
+import { Board, Colors, Monsters, Position, Tile } from '../shared';
+import { SpriteService } from './sprite.service';
 
 const colors = Object.keys(Colors);
 const monsters = Object.keys(Monsters);
@@ -13,7 +10,7 @@ const monsters = Object.keys(Monsters);
   providedIn: 'root',
 })
 export class TileService {
-  constructor(private resolver: ComponentFactoryResolver) {}
+  constructor(private sprite: SpriteService) {}
 
   buildData(position: Position, board: Board) {
     const width = board.width / board.columns;
@@ -24,30 +21,18 @@ export class TileService {
     return { ...position, width, height, type } as Tile;
   }
 
-  buildComponent(data: Tile, container: ViewContainerRef) {
-    const factory = this.resolver.resolveComponentFactory(TileComponent);
-    const ref = container.createComponent(factory);
-    Object.assign(ref.instance, data);
-    ref.hostView.detectChanges();
-    return ref;
+  createFactory() {
+    return (board: Board, position: Position) => {
+      const data = this.buildData(position, board);
+      const ref = this.sprite.create(TileComponent);
+      Object.assign(ref.instance, data);
+      return ref;
+    };
   }
 
-  buildUpdateFactory() {
-    return (board: Board) => {
-      return (data: Partial<Tile>) => {
-        const width = board.width / board.columns;
-        const height = board.height / board.rows;
-        return { ...data, width, height } as Tile;
-      };
-    }
-  }
-
-  buildCreateFactory(container: ViewContainerRef) {
-    return (board: Board) => {
-      return (position: Position) => {
-        const data = this.buildData(position, board);
-        return this.buildComponent(data, container);
-      };
+  destroyFactory() {
+    return (data: Tile) => {
+      return this.sprite.destroy(data);
     }
   }
 }

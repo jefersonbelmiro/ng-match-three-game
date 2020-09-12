@@ -85,8 +85,8 @@ export class LevelService extends Store<State> {
     this.set({ target });
   }
 
-  updateScore() {
-    const score = this.getValue().score + 1;
+  updateScore(value: number) {
+    const score = this.getValue().score + value;
     this.set({ score });
   }
 }

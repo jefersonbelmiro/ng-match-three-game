@@ -1,0 +1,17 @@
+:host {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  position: absolute;
+
+  z-index: 6;
+  color: #fff;
+
+  color: #ddd;
+  text-shadow: -1px 0 black, 0 1px black, 1px 0 black, 0 -1px black;
+
+  font-family: "Titan One", cursive;
+  // font-family: "PT Mono", monospace;
+  // font-weight: bold;
+  font-size: 30px;
+}

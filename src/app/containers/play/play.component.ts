@@ -7,13 +7,15 @@ import {
   ViewContainerRef,
 } from '@angular/core';
 import { EMPTY, forkJoin, Observable } from 'rxjs';
-import { finalize, switchMap } from 'rxjs/operators';
+import { finalize, switchMap, tap } from 'rxjs/operators';
 import { BoardService } from '../../services/board.service';
 import { MatchService } from '../../services/match.service';
 import { StateService } from '../../services/state.service';
 import { TileService } from '../../services/tile.service';
 import { Board, Position, Tile, Colors } from '../../shared';
 import { LevelService } from '../../services/level.service';
+import { EffectScoreComponent } from '../../components/effect-score/effect-score.component';
+import { SpriteService } from '../../services/sprite.service';
 
 const DEFAULT_SIZE = 350;
 
@@ -41,7 +43,8 @@ export class PlayComponent implements OnInit, OnChanges {
     private board: BoardService,
     private matches: MatchService,
     private state: StateService,
-    private level: LevelService
+    private level: LevelService,
+    private sprite: SpriteService
   ) {}
 
   ngOnInit() {
@@ -64,13 +67,14 @@ export class PlayComponent implements OnInit, OnChanges {
       width: size,
       height: size,
     };
-    const createTileFactory = this.tileBuilder.buildCreateFactory(
-      this.container
-    );
-    const updateTileFactory = this.tileBuilder.buildUpdateFactory();
+
+    this.sprite.setContainer(this.container);
+
+    const createTile = this.tileBuilder.createFactory();
+    const destroyTile = this.tileBuilder.destroyFactory();
     this.board.create(this.boardConfig, {
-      createTileFactory,
-      updateTileFactory,
+      createTile,
+      destroyTile,
     });
   }
 
@@ -146,7 +150,10 @@ export class PlayComponent implements OnInit, OnChanges {
       if (this.level.isTargetType(type as Colors)) {
         this.level.updateTarget(type as Colors, types[type]);
       }
-      this.level.updateScore();
+      const scoreValue = matches.length * 10;
+      this.createScoreEffect(matches[0], scoreValue).subscribe(() => {
+        this.level.updateScore(scoreValue);
+      });
     });
 
     return deaths;
@@ -177,5 +184,17 @@ export class PlayComponent implements OnInit, OnChanges {
     }
 
     return data$.length ? forkJoin(data$) : EMPTY;
+  }
+
+  createScoreEffect({ row, column }, value: number) {
+    const ref = this.sprite.create(EffectScoreComponent);
+    const width = this.boardConfig.width / this.boardConfig.columns;
+    const height = this.boardConfig.height / this.boardConfig.rows;
+    const score = ref.instance;
+    score.value = value;
+    score.x = width * column + width / 2 - 15;
+    score.y = height * row + height / 2 - 15;
+
+    return score.die().pipe(finalize(() => ref.destroy()));
   }
 }

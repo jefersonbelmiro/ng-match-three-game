@@ -1,5 +1,6 @@
 import { Observable } from 'rxjs';
 import { Position } from './position';
+import { Sprite } from './sprite';
 
 export enum TileState {
   Idle = 'idle',
@@ -7,7 +8,7 @@ export enum TileState {
   Dead = 'dead',
 }
 
-export interface Tile {
+export interface Tile extends Sprite {
   row: number;
   column: number;
   width: number;
