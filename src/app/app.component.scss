@@ -1,11 +1,4 @@
 :host {
-  display: flex;
-  justify-content: center;
+  display: block;
   height: 100%;
-}
-
-img {
-  position: absolute;
-  z-index: -1;
-  // max-height: 100%;
 }

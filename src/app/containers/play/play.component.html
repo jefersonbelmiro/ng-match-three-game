@@ -1,17 +1,21 @@
-<app-level-status
-  [target]="levelData.target"
-  [moves]="levelData.moves"
-  [score]="levelData.score"
-></app-level-status>
+<div class="content">
+  <app-level-status
+    [target]="levelData.target"
+    [moves]="levelData.moves"
+    [score]="levelData.score"
+  ></app-level-status>
 
-<app-board
-  [width]="boardConfig.width"
-  [height]="boardConfig.height"
-  [rows]="boardConfig.rows"
-  [columns]="boardConfig.columns"
-  (swap)="onSwap($event)"
->
-  <ng-container #container></ng-container>
-</app-board>
+  <app-board
+    [width]="boardConfig.width"
+    [height]="boardConfig.height"
+    [rows]="boardConfig.rows"
+    [columns]="boardConfig.columns"
+    (swap)="onSwap($event)"
+  >
+    <ng-container #container></ng-container>
+  </app-board>
 
-<app-power-ups></app-power-ups>
+  <app-power-ups></app-power-ups>
+</div>
+
+<img class="background" [src]="backgroundUrl" />

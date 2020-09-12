@@ -5,6 +5,7 @@ import {
   OnInit,
   ViewChild,
   ViewContainerRef,
+  HostListener,
 } from '@angular/core';
 import { EMPTY, forkJoin, Observable } from 'rxjs';
 import { finalize, switchMap, tap } from 'rxjs/operators';
@@ -17,7 +18,7 @@ import { LevelService } from '../../services/level.service';
 import { EffectScoreComponent } from '../../components/effect-score/effect-score.component';
 import { SpriteService } from '../../services/sprite.service';
 
-const DEFAULT_SIZE = 350;
+const BOARD_SIZE = 350;
 
 @Component({
   selector: 'app-play',
@@ -25,11 +26,13 @@ const DEFAULT_SIZE = 350;
   styleUrls: ['./play.component.scss'],
 })
 export class PlayComponent implements OnInit, OnChanges {
-  @Input() width: number;
-  @Input() height: number;
+  width = 400;
+  height = 400;
 
-  @Input() rows: number = 5;
-  @Input() columns: number = 5;
+  rows = 5;
+  columns = 5;
+
+  backgroundUrl = 'assets/game_background_3/layers/sky.png';
 
   boardConfig: Board;
   // @FIXME - add interface
@@ -45,7 +48,9 @@ export class PlayComponent implements OnInit, OnChanges {
     private state: StateService,
     private level: LevelService,
     private sprite: SpriteService
-  ) {}
+  ) {
+    this.updateSize();
+  }
 
   ngOnInit() {
     this.createBoard();
@@ -59,8 +64,31 @@ export class PlayComponent implements OnInit, OnChanges {
     }
   }
 
+  @HostListener('window:resize')
+  onResize() {
+    this.updateSize();
+  }
+
+  @HostListener('window:orientationchange')
+  onOrientationChange() {
+    this.updateSize();
+  }
+
+  @HostListener('window:contextmenu', ['$event'])
+  onContextMenu(event: MouseEvent) {
+    event.preventDefault();
+    event.stopPropagation();
+    return false;
+  }
+
+  updateSize() {
+    this.width = window.innerWidth;
+    this.height = window.innerHeight;
+    this.updateBoard();
+  }
+
   createBoard() {
-    let size = Math.min(this.width, this.height, DEFAULT_SIZE);
+    let size = Math.min(this.width, this.height, BOARD_SIZE);
     this.boardConfig = {
       rows: this.rows,
       columns: this.columns,
@@ -79,7 +107,7 @@ export class PlayComponent implements OnInit, OnChanges {
   }
 
   updateBoard() {
-    let size = Math.min(this.width, this.height, DEFAULT_SIZE);
+    let size = Math.min(this.width, this.height, BOARD_SIZE);
     this.boardConfig = { ...this.board, width: size, height: size };
     this.board.update(this.boardConfig);
   }

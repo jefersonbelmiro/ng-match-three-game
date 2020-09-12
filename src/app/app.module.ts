@@ -1,30 +1,23 @@
 import { NgModule } from '@angular/core';
+import { RouterModule, Routes } from '@angular/router';
 import { BrowserModule } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { AppComponent } from './app.component';
-import { BoardBackgroundComponent } from './components/board-background/board-background.component';
-import { BoardComponent } from './components/board/board.component';
-import { TileComponent } from './components/tile/tile.component';
-import { PlayComponent } from './containers/play/play.component';
-import { LevelStatusComponent } from './components/level-status/level-status.component';
-import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
-import { PowerUpsComponent } from './components/power-ups/power-ups.component';
-import { EffectScoreComponent } from './components/effect-score/effect-score.component';
-import { SpriteComponent } from './components/sprite/sprite.component';
+
+const routes: Routes = [
+  {
+    path: '',
+    loadChildren: () => import('./play/play.module').then((m) => m.PlayModule),
+  },
+];
 
 @NgModule({
-  declarations: [
-    AppComponent,
-    BoardComponent,
-    TileComponent,
-    PlayComponent,
-    BoardBackgroundComponent,
-    LevelStatusComponent,
-    PowerUpsComponent,
-    EffectScoreComponent,
-    SpriteComponent,
+  declarations: [AppComponent],
+  imports: [
+    BrowserModule,
+    BrowserAnimationsModule,
+    RouterModule.forRoot(routes),
   ],
-  imports: [BrowserModule, BrowserAnimationsModule, FontAwesomeModule],
   providers: [],
   bootstrap: [AppComponent],
 })
