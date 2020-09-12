@@ -52,6 +52,9 @@ export class LevelStatusComponent implements OnChanges {
   @Input() score = 0;
   @Input() moves = 0;
 
+  scoreCurrent = 0;
+  scoreTimer: number;
+
   icons = {
     star: faStar,
     moves: faArrowsAlt,
@@ -66,7 +69,23 @@ export class LevelStatusComponent implements OnChanges {
   }
 
   ngOnChanges(changes: SimpleChanges) {
-    if (changes.target) {
+    if (changes.score) {
+      if (this.scoreTimer) {
+        clearTimeout(this.scoreTimer);
+      }
+      this.updateScore(Math.floor((this.score - this.scoreCurrent) * 0.1));
+    }
+  }
+
+  updateScore(increment: number) {
+    if (increment < 0) {
+      return;
+    }
+    this.scoreCurrent += increment;
+    if (this.scoreCurrent > this.score) {
+      this.scoreCurrent = this.score;
+    } else {
+      this.scoreTimer = setTimeout(() => this.updateScore(increment), 100) as any;
     }
   }
 }

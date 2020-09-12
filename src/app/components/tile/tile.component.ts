@@ -1,12 +1,11 @@
 import {
   animate,
+  animation,
   AnimationBuilder,
-  AnimationMetadata,
   group,
   keyframes,
   query,
   style,
-  animation,
   useAnimation,
 } from '@angular/animations';
 import { Component, ElementRef, Input } from '@angular/core';
@@ -15,9 +14,9 @@ import { tap } from 'rxjs/operators';
 import { BoardService } from '../../services/board.service';
 import { StateService } from '../../services/state.service';
 import { Colors, Monsters, Position, Tile, TileState } from '../../shared';
+import { targetAnimationFactory } from '../../shared/animations';
 import { Sprite } from '../../shared/sprite';
 import { SpriteComponent } from '../sprite/sprite.component';
-import { targetAnimationFactory } from '../../shared/animations';
 
 const random = (min: number, max: number) => {
   return Math.floor(Math.random() * (max - min + 1) + min);
