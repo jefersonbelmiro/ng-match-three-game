@@ -10,6 +10,7 @@ import { SpriteComponent } from '../components/sprite/sprite.component';
 import { TileComponent } from '../components/tile/tile.component';
 import { PlayComponent } from '../containers/play/play.component';
 import { PlayRoutingModule } from './play-routing.module';
+import { PlayBackgroundComponent } from '../components/play-background/play-background.component';
 
 @NgModule({
   declarations: [
@@ -21,6 +22,7 @@ import { PlayRoutingModule } from './play-routing.module';
     PowerUpsComponent,
     EffectScoreComponent,
     SpriteComponent,
+    PlayBackgroundComponent,
   ],
   imports: [CommonModule, PlayRoutingModule, FontAwesomeModule,],
 })

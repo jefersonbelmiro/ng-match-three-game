@@ -43,9 +43,9 @@ export class BoardBackgroundComponent implements AfterViewInit {
 
     for (let row = 0; row < this.rows; row++) {
       for (let column = 0; column < this.columns; column++) {
-        // context.fillStyle = (row + column) % 2 == 0 ? 'rgba(255,255,255, 0.1)' : 'rgba(255, 255, 255, 0.2)';
+        context.fillStyle = (row + column) % 2 == 0 ? 'rgba(255,255,255, 0)' : 'rgba(255, 255, 255, 0.1)';
         // context.fillStyle = 'rgba(0,0,0, 0.2)';
-        // context.fillRect(column * width, row * height, width, height);
+        context.fillRect(column * width, row * height, width, height);
 
         context.beginPath();
         context.strokeStyle = 'rgba(255, 255, 255, 0.2)';

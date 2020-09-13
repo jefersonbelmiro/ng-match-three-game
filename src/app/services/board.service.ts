@@ -75,8 +75,9 @@ export class BoardService {
 
   isAdjacent(source: Position, target: Position) {
     if (
-      !target ||
-      (source.column !== target.column && source.row !== target.row)
+      !target || !source ||
+      (source.column !== target.column && source.row !== target.row) ||
+      (source.column === target.column && source.row === target.row)
     ) {
       return false;
     }

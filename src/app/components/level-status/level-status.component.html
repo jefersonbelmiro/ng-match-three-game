@@ -5,7 +5,11 @@
   </div>
 
   <div class="target">
-    <div class="target-item" *ngFor="let item of target"  [@targetAnimation]="item.remain">
+    <div
+      class="target-item"
+      *ngFor="let item of target"
+      [@targetAnimation]="item.remain"
+    >
       <img class="type" [src]="getSprite(item.type)" />
       <div class="remain">
         <span *ngIf="item.remain > 0">x{{ item.remain }}</span>

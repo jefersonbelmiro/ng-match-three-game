@@ -42,7 +42,7 @@ export class InputService extends Store<State> {
     this.set({ pointer, source: target });
     this.globalState.set({ selected: target });
 
-    if (source && this.board.isAdjacent(source, target)) {
+    if (this.board.isAdjacent(source, target)) {
       this.set({ source: null });
       return { source, target };
     }

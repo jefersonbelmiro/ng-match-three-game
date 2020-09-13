@@ -25,38 +25,6 @@ const random = (min: number, max: number) => {
 const colors = Object.keys(Colors);
 const monsters = Object.keys(Monsters);
 
-const idleAnimation = () => {
-  return animation(
-    query('.sprite img', [
-      animate(
-        '400ms steps(2)',
-        keyframes([
-          style({ offset: 0, transform: `translateX(0)` }),
-          style({ offset: 1, transform: `translateX(-120px)` }),
-        ])
-      ),
-    ])
-  );
-};
-
-const selectionAnimation = () => {
-  return animation(
-    query(
-      '.sprite img',
-      animate(
-        '400ms',
-        keyframes([
-          style({ easing: 'steps(1)', transform: `translateX(-240px)` }),
-          style({ easing: 'steps(1)', transform: `translateX(-300px)` }),
-          style({ easing: 'steps(1)', transform: `translateX(-360px)` }),
-          style({ easing: 'steps(1)', transform: `translateX(-420px)` }),
-          style({ easing: 'steps(1)', transform: `translateX(-480px)` }),
-        ])
-      )
-    )
-  );
-};
-
 @Component({
   selector: 'app-tile',
   templateUrl: './tile.component.html',
@@ -116,11 +84,34 @@ export class TileComponent extends SpriteComponent implements Tile {
   }
 
   private playIdleAnimation() {
-    return this.animate(idleAnimation()).subscribe();
+    const animations = [
+      query('.sprite img', [
+        animate(
+          '400ms steps(2)',
+          keyframes([
+            style({ transform: `translateX(0)` }),
+            style({ transform: `translateX(-120px)` }),
+          ])
+        ),
+      ]),
+    ];
+    return this.animate(animations).subscribe();
   }
 
   private playSelectionAnimation() {
-    return this.animate(selectionAnimation()).subscribe();
+    const animations = [
+      query(
+        '.sprite img',
+        animate(
+          '400ms steps(4)',
+          keyframes([
+            style({ transform: `translateX(-240px)` }),
+            style({ transform: `translateX(-480px)` }),
+          ])
+        )
+      ),
+    ];
+    return this.animate(animations).subscribe();
   }
 
   get alive(): boolean {

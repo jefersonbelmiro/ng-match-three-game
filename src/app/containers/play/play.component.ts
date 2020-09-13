@@ -6,6 +6,7 @@ import {
   ViewChild,
   ViewContainerRef,
   HostListener,
+  HostBinding,
 } from '@angular/core';
 import { EMPTY, forkJoin, Observable } from 'rxjs';
 import { finalize, switchMap, tap } from 'rxjs/operators';
@@ -17,6 +18,12 @@ import { Board, Position, Tile, Colors } from '../../shared';
 import { LevelService } from '../../services/level.service';
 import { EffectScoreComponent } from '../../components/effect-score/effect-score.component';
 import { SpriteService } from '../../services/sprite.service';
+import { trigger, group } from '@angular/animations';
+import { transition } from '@angular/animations';
+import { query } from '@angular/animations';
+import { style } from '@angular/animations';
+import { animate } from '@angular/animations';
+import { keyframes } from '@angular/animations';
 
 const BOARD_SIZE = 350;
 
@@ -24,15 +31,55 @@ const BOARD_SIZE = 350;
   selector: 'app-play',
   templateUrl: './play.component.html',
   styleUrls: ['./play.component.scss'],
+  animations: [
+    trigger('fadeIn', [
+      transition(':enter', [
+        group([
+
+          query('app-level-status', [
+            style({ transform: 'scale(0)' }),
+            animate(
+              '300ms 150ms',
+              keyframes([
+                style({ transform: 'translateY(-50%)', opacity: 0, }),
+                style({ transform: 'translateY(0)', opacity: 1 }),
+              ])
+            ),
+          ]),
+
+          query('app-board', [
+            style({ transform: 'scale(0)', }),
+            animate(
+              '400ms 350ms',
+              keyframes([
+                style({ transform: 'scale(0.5)', opacity: 0, }),
+                style({ transform: 'scale(1)', opacity: 1 }),
+              ])
+            ),
+          ]),
+
+          query('app-power-ups', [
+            style({ transform: 'scale(0)' }),
+            animate(
+              '300ms 350ms',
+              keyframes([
+                style({ transform: 'translateY(50%)', opacity: 0, }),
+                style({ transform: 'translateY(0)', opacity: 1 }),
+              ])
+            ),
+          ]),
+        ]),
+      ]),
+    ]),
+  ],
 })
 export class PlayComponent implements OnInit, OnChanges {
+  @HostBinding('@fadeIn') fadeIn: string;
   width = 400;
   height = 400;
 
   rows = 5;
   columns = 5;
-
-  backgroundUrl = 'assets/game_background_3/layers/sky.png';
 
   boardConfig: Board;
   // @FIXME - add interface
