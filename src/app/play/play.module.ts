@@ -11,6 +11,7 @@ import { TileComponent } from '../components/tile/tile.component';
 import { PlayComponent } from '../containers/play/play.component';
 import { PlayRoutingModule } from './play-routing.module';
 import { PlayBackgroundComponent } from '../components/play-background/play-background.component';
+import { EffectHorizontalArrowComponent } from '../components/effect-horizontal-arrow/effect-horizontal-arrow.component';
 
 @NgModule({
   declarations: [
@@ -23,6 +24,7 @@ import { PlayBackgroundComponent } from '../components/play-background/play-back
     EffectScoreComponent,
     SpriteComponent,
     PlayBackgroundComponent,
+    EffectHorizontalArrowComponent,
   ],
   imports: [CommonModule, PlayRoutingModule, FontAwesomeModule,],
 })

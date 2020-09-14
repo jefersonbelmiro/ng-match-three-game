@@ -11,6 +11,7 @@
     [rows]="boardConfig.rows"
     [columns]="boardConfig.columns"
     (swap)="onSwap($event)"
+    (select)="onSelect($event)"
   >
     <ng-container #container></ng-container>
   </app-board>

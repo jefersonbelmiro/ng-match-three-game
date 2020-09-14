@@ -6,6 +6,8 @@ import {
   trigger,
 } from '@angular/animations';
 import { Component, HostListener, OnInit } from '@angular/core';
+import { StateService } from '../../services/state.service';
+import { PowerUps, PowerUp } from '../../shared';
 
 @Component({
   selector: 'app-power-ups',
@@ -13,35 +15,14 @@ import { Component, HostListener, OnInit } from '@angular/core';
   styleUrls: ['./power-ups.component.scss'],
   animations: [
     trigger('selectedAnimation', [
-      state('selected', style({ transform: 'scale(1.4)' })),
+      state('selected', style({ transform: 'scale(1.4)', zIndex: 5 })),
       state('idle', style({ transform: 'scale(1)' })),
       transition('idle <=> selected', animate(100)),
     ]),
   ],
 })
 export class PowerUpsComponent implements OnInit {
-  data = [
-    {
-      value: 0,
-      type: 'vertical_arrow',
-      selected: false,
-    },
-    {
-      value: 1,
-      type: 'horizontal_arrow',
-      selected: false,
-    },
-    {
-      value: 5,
-      type: 'star',
-      selected: false,
-    },
-    {
-      value: 10,
-      type: 'axe',
-      selected: false,
-    },
-  ];
+  data: PowerUp[] = [];
 
   sprites = {
     vertical_arrow: 'assets/items-effects/Vertical_arrow.png',
@@ -52,9 +33,13 @@ export class PowerUpsComponent implements OnInit {
 
   selected;
 
-  constructor() {}
+  constructor(private state: StateService) {}
 
-  ngOnInit(): void {}
+  ngOnInit(): void {
+    this.state.getState().subscribe((values) => {
+      this.data = values.powerUps;
+    });
+  }
 
   @HostListener('window:mousedown')
   @HostListener('window:touchstart')
@@ -62,11 +47,12 @@ export class PowerUpsComponent implements OnInit {
     this.selected = null;
   }
 
-  onSelect(item) {
+  onSelect(item: PowerUp) {
     this.selected = item;
+    this.state.set({ selected: null, selectedPowerUp: item });
   }
 
-  getItemAnimation(item) {
+  getItemAnimation(item: PowerUp) {
     return item === this.selected ? 'selected' : 'idle';
   }
 }

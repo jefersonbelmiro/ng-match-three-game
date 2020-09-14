@@ -1,13 +1,34 @@
 import { Injectable } from '@angular/core';
-import { Store, Tile } from '../shared';
+import { Store, Tile, PowerUp, PowerUps } from '../shared';
 
 const INITIAL_STATE = {
   busy: 0,
+  powerUps: [
+    {
+      type: PowerUps.VerticalArrow,
+      value: 10,
+    },
+    {
+      type: PowerUps.HorizontalArrow,
+      value: 10,
+    },
+    {
+      type: PowerUps.Star,
+      value: 50,
+    },
+    {
+      type: PowerUps.Axe,
+      value: 10,
+    }
+  ]
 };
 
 export interface State {
   busy: number;
   selected?: Tile;
+
+  selectedPowerUp?: PowerUp;
+  powerUps?: PowerUp[];
 }
 
 @Injectable({
@@ -24,7 +45,7 @@ export class StateService extends Store<State> {
     if (current < 0) {
       current = 0;
     }
-    this.setState({ busy: current });
+    this.set({ busy: current });
   }
 
   isBusy() {

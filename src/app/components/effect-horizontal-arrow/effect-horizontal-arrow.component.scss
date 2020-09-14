@@ -1,0 +1,20 @@
+:host {
+  position: absolute;
+  z-index: 10;
+  height: 70px;
+  width: 70px;
+  left: 0;
+  top: 0;
+
+  .sprite {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    img {
+      position: absolute;
+      height: 100%;
+      width: 100%;
+    }
+  }
+}

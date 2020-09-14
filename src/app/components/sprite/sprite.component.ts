@@ -28,7 +28,8 @@ export class SpriteComponent implements Sprite {
   ) {}
 
   animate(
-    animation: AnimationMetadata | AnimationMetadata[]
+    animation: AnimationMetadata | AnimationMetadata[],
+    options?: { destroyOnDone: boolean }
   ): Observable<void> {
     return new Observable((subscribe) => {
       const factory = this.builder.build(animation);
@@ -36,7 +37,9 @@ export class SpriteComponent implements Sprite {
       player.onDone(() => {
         subscribe.next();
         subscribe.complete();
-        player.destroy();
+        if (options?.destroyOnDone !== false) {
+          player.destroy();
+        }
       });
       player.play();
     });

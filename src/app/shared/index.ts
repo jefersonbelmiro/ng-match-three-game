@@ -12,7 +12,6 @@ export enum Colors {
 }
 
 export enum Monsters {
-
   Unicorn = 'assets/monsters/unicorn/Unicorn_1.png',
   Rabbit = 'assets/monsters/rabbit/Rabbit_1.png',
   Pig = 'assets/monsters/pig/Pig_1.png',
@@ -23,7 +22,6 @@ export enum Monsters {
 
   Sheep = 'assets/monsters/sheep/Sheep_1.png',
 
-
   Lizard = 'assets/monsters/lizard/Lizard_1.png',
 
   Cat = 'assets/monsters/cat/Cat_1.png',
@@ -32,3 +30,14 @@ export enum Monsters {
   Dragon = 'assets/monsters/dragon/Head_1.png',
 }
 
+export enum PowerUps {
+  VerticalArrow = 'vertical_arrow',
+  HorizontalArrow = 'horizontal_arrow',
+  Star = 'star',
+  Axe = 'axe',
+}
+
+export interface PowerUp {
+  value: Number;
+  type: PowerUps;
+}

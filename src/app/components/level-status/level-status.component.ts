@@ -85,7 +85,10 @@ export class LevelStatusComponent implements OnChanges {
     if (this.scoreCurrent > this.score) {
       this.scoreCurrent = this.score;
     } else {
-      this.scoreTimer = setTimeout(() => this.updateScore(increment), 100) as any;
+      this.scoreTimer = setTimeout(
+        () => this.updateScore(increment),
+        100
+      ) as any;
     }
   }
 }

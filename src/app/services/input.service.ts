@@ -6,7 +6,6 @@ import { StateService } from './state.service';
 interface State {
   element?: HTMLElement;
   pointer?: { x: number; y: number };
-  source?: Tile;
 }
 
 @Injectable({
@@ -26,7 +25,7 @@ export class InputService extends Store<State> {
       return;
     }
 
-    const { source } = this.getValue();
+    const source = this.globalState.getValue().selected;
     const pointer = this.getPointer(event);
     const rect = this.getValue().element.getBoundingClientRect();
     const width = this.board.width / this.board.columns;
@@ -39,11 +38,11 @@ export class InputService extends Store<State> {
       return;
     }
 
-    this.set({ pointer, source: target });
+    this.set({ pointer });
     this.globalState.set({ selected: target });
 
     if (this.board.isAdjacent(source, target)) {
-      this.set({ source: null });
+      this.globalState.set({ selected: null });
       return { source, target };
     }
 
@@ -51,7 +50,8 @@ export class InputService extends Store<State> {
   }
 
   onMove(event: MouseEvent) {
-    const { pointer, source } = this.getValue();
+    const { pointer } = this.getValue();
+    const source = this.globalState.getValue().selected;
     if (!pointer || !source || this.globalState.isBusy()) {
       return;
     }
@@ -77,7 +77,7 @@ export class InputService extends Store<State> {
 
     const target = this.board.getAt({ row, column });
 
-    this.set({ pointer: null, source: null });
+    this.set({ pointer: null });
     this.globalState.set({ selected: null });
 
     if (!target || !target.idle) {

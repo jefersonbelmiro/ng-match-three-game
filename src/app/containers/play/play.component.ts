@@ -1,29 +1,31 @@
 import {
+  animate,
+  group,
+  keyframes,
+  query,
+  style,
+  transition,
+  trigger,
+} from '@angular/animations';
+import {
   Component,
-  Input,
-  OnChanges,
+  HostBinding,
+  HostListener,
   OnInit,
   ViewChild,
   ViewContainerRef,
-  HostListener,
-  HostBinding,
 } from '@angular/core';
 import { EMPTY, forkJoin, Observable } from 'rxjs';
-import { finalize, switchMap, tap } from 'rxjs/operators';
+import { finalize, switchMap } from 'rxjs/operators';
+import { EffectScoreComponent } from '../../components/effect-score/effect-score.component';
 import { BoardService } from '../../services/board.service';
+import { LevelService } from '../../services/level.service';
 import { MatchService } from '../../services/match.service';
+import { SpriteService } from '../../services/sprite.service';
 import { StateService } from '../../services/state.service';
 import { TileService } from '../../services/tile.service';
-import { Board, Position, Tile, Colors } from '../../shared';
-import { LevelService } from '../../services/level.service';
-import { EffectScoreComponent } from '../../components/effect-score/effect-score.component';
-import { SpriteService } from '../../services/sprite.service';
-import { trigger, group } from '@angular/animations';
-import { transition } from '@angular/animations';
-import { query } from '@angular/animations';
-import { style } from '@angular/animations';
-import { animate } from '@angular/animations';
-import { keyframes } from '@angular/animations';
+import { Board, Colors, Position, Tile, PowerUp, PowerUps } from '../../shared';
+import { EffectHorizontalArrowComponent } from '../../components/effect-horizontal-arrow/effect-horizontal-arrow.component';
 
 const BOARD_SIZE = 350;
 
@@ -35,24 +37,23 @@ const BOARD_SIZE = 350;
     trigger('fadeIn', [
       transition(':enter', [
         group([
-
           query('app-level-status', [
             style({ transform: 'scale(0)' }),
             animate(
               '300ms 150ms',
               keyframes([
-                style({ transform: 'translateY(-50%)', opacity: 0, }),
+                style({ transform: 'translateY(-50%)', opacity: 0 }),
                 style({ transform: 'translateY(0)', opacity: 1 }),
               ])
             ),
           ]),
 
           query('app-board', [
-            style({ transform: 'scale(0)', }),
+            style({ transform: 'scale(0)' }),
             animate(
               '400ms 350ms',
               keyframes([
-                style({ transform: 'scale(0.5)', opacity: 0, }),
+                style({ transform: 'scale(0.5)', opacity: 0 }),
                 style({ transform: 'scale(1)', opacity: 1 }),
               ])
             ),
@@ -63,7 +64,7 @@ const BOARD_SIZE = 350;
             animate(
               '300ms 350ms',
               keyframes([
-                style({ transform: 'translateY(50%)', opacity: 0, }),
+                style({ transform: 'translateY(50%)', opacity: 0 }),
                 style({ transform: 'translateY(0)', opacity: 1 }),
               ])
             ),
@@ -73,7 +74,7 @@ const BOARD_SIZE = 350;
     ]),
   ],
 })
-export class PlayComponent implements OnInit, OnChanges {
+export class PlayComponent implements OnInit {
   @HostBinding('@fadeIn') fadeIn: string;
   width = 400;
   height = 400;
@@ -103,12 +104,6 @@ export class PlayComponent implements OnInit, OnChanges {
     this.createBoard();
     this.level.create(this.board.data);
     this.level.getState().subscribe((data) => (this.levelData = data));
-  }
-
-  ngOnChanges() {
-    if (this.boardConfig) {
-      this.updateBoard();
-    }
   }
 
   @HostListener('window:resize')
@@ -157,6 +152,14 @@ export class PlayComponent implements OnInit, OnChanges {
     let size = Math.min(this.width, this.height, BOARD_SIZE);
     this.boardConfig = { ...this.board, width: size, height: size };
     this.board.update(this.boardConfig);
+  }
+
+  onSelect(tile: Tile) {
+    const state = this.state.getValue();
+    if (state.selectedPowerUp) {
+      this.executePowerUp(state.selectedPowerUp, tile);
+      this.state.set({ selectedPowerUp: null, selected: null });
+    }
   }
 
   onSwap({ source, target }) {
@@ -271,5 +274,25 @@ export class PlayComponent implements OnInit, OnChanges {
     score.y = height * row + height / 2 - 15;
 
     return score.die().pipe(finalize(() => ref.destroy()));
+  }
+
+  executePowerUp(powerUp: PowerUp, target: Tile) {
+    if (powerUp.type === PowerUps.HorizontalArrow) {
+      const ref = this.sprite.create(EffectHorizontalArrowComponent);
+      ref.instance.type = target.type;
+      ref.instance.x = target.x;
+      ref.instance.y = target.y;
+      ref.instance.die().subscribe();
+
+      const matches = [];
+      for (let column = 0; column < this.board.columns; column++) {
+        const tile = this.board.getAt({ row: target.row, column });
+        if (tile) {
+          matches.push(tile);
+        }
+      }
+
+      this.processMatches(matches);
+    }
   }
 }
