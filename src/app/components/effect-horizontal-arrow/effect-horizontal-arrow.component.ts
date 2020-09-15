@@ -8,36 +8,26 @@ import { SpriteComponent } from '../sprite/sprite.component';
   styleUrls: ['./effect-horizontal-arrow.component.scss'],
 })
 export class EffectHorizontalArrowComponent extends SpriteComponent {
-  leftUrl: string;
-  horizontalUrl: string;
-  rightUrl: string;
+  spriteUrl: string;
 
   @Input() type: string;
 
   ngOnInit() {
     this.spriteUrl = `assets/items-effects/arrows/${this.type}_horizontal.png`;
-    console.log('ngOnInit');
   }
 
   die() {
-    const startX = 0;
-    const endX = -150;
-    console.log('die', startX, this.x);
-
-    this.x = 140;
-    // this.y = 0;
     const animation = group([
-
       animate(
         '300ms',
         keyframes([
-          style({ transform: `scale(1)` }),
-          style({ transform: `scale(5, 1.5)`  }),
-          style({ opacity: 0.7, transform: `scale(5, 1)`  }),
-          style({ opacity: 0.0, transform: `scale(5, 1)`  }),
+          style({ offset: 0, transform: `scale(1, 0)` }),
+          style({ offset: 0.3, transform: `scale(5, 3)` }),
+          style({ offset: 0.6, opacity: 0.9, transform: `scale(5, 1)` }),
+          style({ offset: 1, opacity: 0.3, transform: `scale(5, 0)` }),
         ])
       ),
     ]);
-    return this.animate(animation,  { destroyOnDone: false });
+    return this.animate(animation, { destroyOnDone: false });
   }
 }

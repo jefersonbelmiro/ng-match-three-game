@@ -34,22 +34,33 @@ export class AppComponent implements OnInit {
 
   loadAssets() {
     const assets = [
+      // monsters
       'assets/monsters/rabbit/sprite.png',
-      'assets/items-effects/glow/Rabbit.png',
       'assets/monsters/unicorn/sprite.png',
-      'assets/items-effects/glow/Unicorn.png',
       'assets/monsters/pig/sprite.png',
-      'assets/items-effects/glow/Pig.png',
       'assets/monsters/spider/sprite.png',
-      'assets/items-effects/glow/Spider.png',
-      'assets/items-effects/Vertical_arrow.png',
-      'assets/items-effects/Horizontal_arrow.png',
-      'assets/items-effects/Star.png',
-      'assets/items-effects/Ax.png',
       'assets/monsters/unicorn/Unicorn_1.png',
       'assets/monsters/spider/01.png',
       'assets/monsters/pig/Pig_1.png',
       'assets/monsters/rabbit/Rabbit_1.png',
+
+      // glow
+      'assets/items-effects/glow/Unicorn.png',
+      'assets/items-effects/glow/Rabbit.png',
+      'assets/items-effects/glow/Pig.png',
+      'assets/items-effects/glow/Spider.png',
+
+      // power-ups
+      'assets/items-effects/Vertical_arrow.png',
+      'assets/items-effects/Horizontal_arrow.png',
+      'assets/items-effects/Star.png',
+      'assets/items-effects/Ax.png',
+
+      // arrows
+      'assets/items-effects/arrows/Rabbit_horizontal.png',
+      'assets/items-effects/arrows/Unicorn_horizontal.png',
+      'assets/items-effects/arrows/Pig_horizontal.png',
+      'assets/items-effects/arrows/Spider_horizontal.png',
     ];
 
     const loadItem = (url: string) => {

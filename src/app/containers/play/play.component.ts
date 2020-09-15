@@ -280,14 +280,14 @@ export class PlayComponent implements OnInit {
     if (powerUp.type === PowerUps.HorizontalArrow) {
       const ref = this.sprite.create(EffectHorizontalArrowComponent);
       ref.instance.type = target.type;
-      ref.instance.x = target.x;
+      ref.instance.x = 140;
       ref.instance.y = target.y;
-      ref.instance.die().subscribe();
+      ref.instance.die().subscribe(() => ref.destroy());
 
-      const matches = [];
+      const matches = [target];
       for (let column = 0; column < this.board.columns; column++) {
         const tile = this.board.getAt({ row: target.row, column });
-        if (tile) {
+        if (tile && tile !== target) {
           matches.push(tile);
         }
       }
