@@ -1,20 +1,27 @@
-import { Component, ElementRef, Input, HostBinding } from '@angular/core';
-import { Sprite } from '../../shared/sprite';
-import { AnimationMetadata, AnimationBuilder } from '@angular/animations';
+import { AnimationBuilder, AnimationMetadata } from '@angular/animations';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  ElementRef,
+  HostBinding,
+  Input,
+} from '@angular/core';
 import { Observable } from 'rxjs';
+import { Sprite } from '../../shared/sprite';
 
 @Component({
   selector: 'app-sprite',
   templateUrl: './sprite.component.html',
   styleUrls: ['./sprite.component.scss'],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class SpriteComponent implements Sprite {
   @HostBinding('style.left.px') @Input() x: number;
   @HostBinding('style.top.px') @Input() y: number;
   @HostBinding('style.width.px') @Input() width: number;
   @HostBinding('style.height.px') @Input() height: number;
-  @Input() visible: boolean;
-  @HostBinding('[hidden]') get isHidden() {
+  @Input() visible = true;
+  @HostBinding('hidden') get isHidden() {
     return !this.visible;
   }
 
@@ -26,6 +33,14 @@ export class SpriteComponent implements Sprite {
     protected elementRef: ElementRef,
     protected builder: AnimationBuilder
   ) {}
+
+  onReborn() {
+    this.visible = true;
+  }
+
+  onDie() {
+    this.visible = false;
+  }
 
   animate(
     animation: AnimationMetadata | AnimationMetadata[],

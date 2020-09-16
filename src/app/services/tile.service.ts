@@ -1,6 +1,6 @@
-import { Injectable } from '@angular/core';
+import { Injectable, ChangeDetectorRef } from '@angular/core';
 import { TileComponent } from '../components/tile/tile.component';
-import { Board, Colors, Monsters, Position, Tile } from '../shared';
+import { Board, Colors, Monsters, Position, Tile, TileState } from '../shared';
 import { SpriteService } from './sprite.service';
 
 const colors = Object.keys(Colors);
@@ -18,14 +18,14 @@ export class TileService {
     // const type = colors[Math.floor(Math.random() * colors.length)];
     // const type = monsters[Math.floor(Math.random() * monsters.length)];
     const type = monsters[Math.floor(Math.random() * 4)];
-    return { ...position, width, height, type } as Tile;
+    return { ...position, width, height, type, state: TileState.Idle } as Tile;
   }
 
   createFactory() {
     return (board: Board, position: Position) => {
       const data = this.buildData(position, board);
       const ref = this.sprite.create(TileComponent);
-      Object.assign(ref.instance, data);
+      this.sprite.update(ref, data);
       return ref;
     };
   }
@@ -33,6 +33,6 @@ export class TileService {
   destroyFactory() {
     return (data: Tile) => {
       return this.sprite.destroy(data);
-    }
+    };
   }
 }

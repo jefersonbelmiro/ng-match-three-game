@@ -1,5 +1,11 @@
-import { group, style, animate, keyframes } from '@angular/animations';
-import { Component, Input } from '@angular/core';
+import {
+  group,
+  style,
+  animate,
+  keyframes,
+  AnimationBuilder,
+} from '@angular/animations';
+import { Component, Input, ElementRef, OnChanges, OnInit } from '@angular/core';
 import { SpriteComponent } from '../sprite/sprite.component';
 
 @Component({
@@ -7,12 +13,21 @@ import { SpriteComponent } from '../sprite/sprite.component';
   templateUrl: './effect-horizontal-arrow.component.html',
   styleUrls: ['./effect-horizontal-arrow.component.scss'],
 })
-export class EffectHorizontalArrowComponent extends SpriteComponent {
+export class EffectHorizontalArrowComponent extends SpriteComponent
+  implements OnInit, OnChanges {
   spriteUrl: string;
 
   @Input() type: string;
 
   ngOnInit() {
+    this.setSpriteUrl();
+  }
+
+  ngOnChanges() {
+    this.setSpriteUrl();
+  }
+
+  private setSpriteUrl() {
     this.spriteUrl = `assets/items-effects/arrows/${this.type}_horizontal.png`;
   }
 

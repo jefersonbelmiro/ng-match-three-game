@@ -190,12 +190,14 @@ export class PlayComponent implements OnInit {
   }
 
   processMatches(matches: Tile[]) {
+    if (matches.length === 0) {
+      return;
+    }
+
     this.state.setBusy(true);
 
     const deaths = this.updateLevel(matches);
-
-    // const deaths = matches.map((tile) => tile.die());
-    forkJoin(deaths.length ? deaths : EMPTY)
+    forkJoin(deaths)
       .pipe(
         switchMap(() => this.fillBoard()),
         finalize(() => this.state.setBusy(false))
@@ -228,10 +230,11 @@ export class PlayComponent implements OnInit {
       if (this.level.isTargetType(type as Colors)) {
         this.level.updateTarget(type as Colors, types[type]);
       }
-      const scoreValue = matches.length * 10;
-      this.createScoreEffect(matches[0], scoreValue).subscribe(() => {
-        this.level.updateScore(scoreValue);
-      });
+    });
+
+    const scoreValue = matches.length * 10;
+    this.createScoreEffect(matches[0], scoreValue).subscribe(() => {
+      this.level.updateScore(scoreValue);
     });
 
     return deaths;
@@ -273,7 +276,11 @@ export class PlayComponent implements OnInit {
     score.x = width * column + width / 2 - 15;
     score.y = height * row + height / 2 - 15;
 
-    return score.die().pipe(finalize(() => ref.destroy()));
+    return score.die().pipe(
+      finalize(() => {
+        this.sprite.destroy(score);
+      })
+    );
   }
 
   executePowerUp(powerUp: PowerUp, target: Tile) {
@@ -282,7 +289,9 @@ export class PlayComponent implements OnInit {
       ref.instance.type = target.type;
       ref.instance.x = 140;
       ref.instance.y = target.y;
-      ref.instance.die().subscribe(() => ref.destroy());
+      ref.instance.die().subscribe(() => {
+        this.sprite.destroy(ref.instance);
+      });
 
       const matches = [target];
       for (let column = 0; column < this.board.columns; column++) {

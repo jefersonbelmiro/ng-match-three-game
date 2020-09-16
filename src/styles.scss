@@ -21,3 +21,7 @@ body {
   // to no longer trigger a backward history-navigation.
   overscroll-behavior: contain;
 }
+
+[hidden] {
+  display: none !important;
+}

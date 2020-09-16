@@ -8,7 +8,16 @@ import {
   style,
   useAnimation,
 } from '@angular/animations';
-import { Component, ElementRef, Input } from '@angular/core';
+import {
+  Component,
+  ElementRef,
+  Input,
+  ChangeDetectorRef,
+  NgZone,
+  ChangeDetectionStrategy,
+  HostBinding,
+  OnChanges,
+} from '@angular/core';
 import { Observable, Subscriber, timer } from 'rxjs';
 import { tap } from 'rxjs/operators';
 import { BoardService } from '../../services/board.service';
@@ -29,8 +38,9 @@ const monsters = Object.keys(Monsters);
   selector: 'app-tile',
   templateUrl: './tile.component.html',
   styleUrls: ['./tile.component.scss'],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class TileComponent extends SpriteComponent implements Tile {
+export class TileComponent extends SpriteComponent implements Tile, OnChanges {
   @Input() row: number;
   @Input() column: number;
   @Input() type: string;
@@ -56,6 +66,11 @@ export class TileComponent extends SpriteComponent implements Tile {
     super(elementRef, builder);
   }
 
+  ngOnChanges() {
+    this.glowUrl = `assets/items-effects/glow/${this.type}.png`;
+    this.spriteUrl = `assets/monsters/${this.type.toLowerCase()}/sprite.png`;
+  }
+
   ngOnInit() {
     this.globalState.getState().subscribe((value) => {
       const element = this.elementRef.nativeElement as HTMLElement;
@@ -78,7 +93,6 @@ export class TileComponent extends SpriteComponent implements Tile {
         this.playIdleAnimation();
       }
     });
-
     this.glowUrl = `assets/items-effects/glow/${this.type}.png`;
     this.spriteUrl = `assets/monsters/${this.type.toLowerCase()}/sprite.png`;
   }

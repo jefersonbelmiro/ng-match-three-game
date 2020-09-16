@@ -20,10 +20,10 @@ import { Component, HostBinding, OnInit } from '@angular/core';
       transition(':leave', [
         group([
           animate(
-            '300ms 100ms ease-out',
+            '300ms 300ms ease-out',
             keyframes([
-              style({ transform: 'scale(1)', opacity: 1 }),
-              style({ transform: 'scale(0) translateY(-600px)', opacity: 0.5 }),
+              style({ opacity: 1 }),
+              style({ opacity: 0 }),
             ])
           ),
         ]),
