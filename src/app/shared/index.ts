@@ -38,6 +38,6 @@ export enum PowerUps {
 }
 
 export interface PowerUp {
-  value: Number;
+  value: number;
   type: PowerUps;
 }

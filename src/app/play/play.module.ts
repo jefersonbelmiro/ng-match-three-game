@@ -12,6 +12,8 @@ import { PlayComponent } from '../containers/play/play.component';
 import { PlayRoutingModule } from './play-routing.module';
 import { PlayBackgroundComponent } from '../components/play-background/play-background.component';
 import { EffectHorizontalArrowComponent } from '../components/effect-horizontal-arrow/effect-horizontal-arrow.component';
+import { EffectVerticalArrowComponent } from '../components/effect-vertical-arrow/effect-vertical-arrow.component';
+import { EffectAxeComponent } from '../components/effect-axe/effect-axe.component';
 
 @NgModule({
   declarations: [
@@ -25,6 +27,8 @@ import { EffectHorizontalArrowComponent } from '../components/effect-horizontal-
     SpriteComponent,
     PlayBackgroundComponent,
     EffectHorizontalArrowComponent,
+    EffectVerticalArrowComponent,
+    EffectAxeComponent,
   ],
   imports: [CommonModule, PlayRoutingModule, FontAwesomeModule,],
 })

@@ -21,11 +21,11 @@ import { EffectScoreComponent } from '../../components/effect-score/effect-score
 import { BoardService } from '../../services/board.service';
 import { LevelService } from '../../services/level.service';
 import { MatchService } from '../../services/match.service';
+import { PowerUpService } from '../../services/power-up.service';
 import { SpriteService } from '../../services/sprite.service';
 import { StateService } from '../../services/state.service';
 import { TileService } from '../../services/tile.service';
-import { Board, Colors, Position, Tile, PowerUp, PowerUps } from '../../shared';
-import { EffectHorizontalArrowComponent } from '../../components/effect-horizontal-arrow/effect-horizontal-arrow.component';
+import { Board, Colors, Position, Tile } from '../../shared';
 
 const BOARD_SIZE = 350;
 
@@ -95,7 +95,8 @@ export class PlayComponent implements OnInit {
     private matches: MatchService,
     private state: StateService,
     private level: LevelService,
-    private sprite: SpriteService
+    private sprite: SpriteService,
+    private powerUp: PowerUpService
   ) {
     this.updateSize();
   }
@@ -157,7 +158,9 @@ export class PlayComponent implements OnInit {
   onSelect(tile: Tile) {
     const state = this.state.getValue();
     if (state.selectedPowerUp) {
-      this.executePowerUp(state.selectedPowerUp, tile);
+      this.powerUp.execute(state.selectedPowerUp, tile).subscribe((matches) => {
+        this.processMatches(matches);
+      });
       this.state.set({ selectedPowerUp: null, selected: null });
     }
   }
@@ -281,27 +284,5 @@ export class PlayComponent implements OnInit {
         this.sprite.destroy(score);
       })
     );
-  }
-
-  executePowerUp(powerUp: PowerUp, target: Tile) {
-    if (powerUp.type === PowerUps.HorizontalArrow) {
-      const ref = this.sprite.create(EffectHorizontalArrowComponent);
-      ref.instance.type = target.type;
-      ref.instance.x = 140;
-      ref.instance.y = target.y;
-      ref.instance.die().subscribe(() => {
-        this.sprite.destroy(ref.instance);
-      });
-
-      const matches = [target];
-      for (let column = 0; column < this.board.columns; column++) {
-        const tile = this.board.getAt({ row: target.row, column });
-        if (tile && tile !== target) {
-          matches.push(tile);
-        }
-      }
-
-      this.processMatches(matches);
-    }
   }
 }

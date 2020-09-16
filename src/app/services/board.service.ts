@@ -65,6 +65,42 @@ export class BoardService {
     return (this.data[position.row] || [])[position.column];
   }
 
+  getAllRow(row: number) {
+    const data = [];
+    for (let column = 0; column < this.columns; column++) {
+      const tile = this.getAt({ row, column });
+      if (tile) {
+        data.push(tile);
+      }
+    }
+    return data;
+  }
+
+  getAllColumn(column: number) {
+    const data = [];
+    for (let row = 0; row < this.rows; row++) {
+      const tile = this.getAt({ row, column });
+      if (tile) {
+        data.push(tile);
+      }
+    }
+    return data;
+  }
+
+  getAllType(type: string) {
+    const data = [];
+    for (let row = 0; row < this.data.length; row++) {
+      const columns = this.data[row];
+      for (let column = 0; column < columns.length; column++) {
+        const tile = this.getAt({ row, column });
+        if (tile && tile.type === type) {
+          data.push(tile);
+        }
+      }
+    }
+    return data;
+  }
+
   removeAt({ row, column }: Position) {
     this.data[row][column] = null;
   }
@@ -75,7 +111,8 @@ export class BoardService {
 
   isAdjacent(source: Position, target: Position) {
     if (
-      !target || !source ||
+      !target ||
+      !source ||
       (source.column !== target.column && source.row !== target.row) ||
       (source.column === target.column && source.row === target.row)
     ) {

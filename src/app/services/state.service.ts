@@ -6,19 +6,19 @@ const INITIAL_STATE = {
   powerUps: [
     {
       type: PowerUps.VerticalArrow,
-      value: 10,
+      value: 99,
     },
     {
       type: PowerUps.HorizontalArrow,
-      value: 10,
+      value: 99,
     },
     {
       type: PowerUps.Star,
-      value: 50,
+      value: 99,
     },
     {
       type: PowerUps.Axe,
-      value: 10,
+      value: 99,
     }
   ]
 };

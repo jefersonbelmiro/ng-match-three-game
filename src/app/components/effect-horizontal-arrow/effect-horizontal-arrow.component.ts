@@ -1,11 +1,5 @@
-import {
-  group,
-  style,
-  animate,
-  keyframes,
-  AnimationBuilder,
-} from '@angular/animations';
-import { Component, Input, ElementRef, OnChanges, OnInit } from '@angular/core';
+import { animate, group, keyframes, style } from '@angular/animations';
+import { Component, Input, OnChanges, OnInit } from '@angular/core';
 import { SpriteComponent } from '../sprite/sprite.component';
 
 @Component({
@@ -43,6 +37,6 @@ export class EffectHorizontalArrowComponent extends SpriteComponent
         ])
       ),
     ]);
-    return this.animate(animation, { destroyOnDone: false });
+    return this.animate(animation);
   }
 }

@@ -1,4 +1,4 @@
-<div class="container" >
+<div class="container">
   <div
     class="item"
     (click)="onSelect(item)"
@@ -6,7 +6,7 @@
     *ngFor="let item of data"
     [@selectedAnimation]="getItemAnimation(item)"
   >
-  <span>{{ item.value }}</span>
+    <span>{{ item.value }}</span>
     <img [src]="sprites[item.type]" />
   </div>
 </div>
