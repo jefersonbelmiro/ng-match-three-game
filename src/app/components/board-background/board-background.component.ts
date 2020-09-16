@@ -37,8 +37,14 @@ export class BoardBackgroundComponent implements AfterViewInit {
     const element = this.canvasRef.nativeElement as HTMLCanvasElement;
     const context = element.getContext('2d');
 
-    const width = this.width / this.columns;
-    const height = this.height / this.rows;
+    const size = Math.min(this.width, this.height);
+    const length = Math.max(this.rows, this.columns);
+    const height = size / length;
+    const width = size / length;// board.width / board.columns;
+
+
+    // const height = this.height / this.rows;
+    // const width = height;//this.width / this.columns;
     context.clearRect(0, 0, this.width, this.height);
 
     for (let row = 0; row < this.rows; row++) {

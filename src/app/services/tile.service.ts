@@ -13,8 +13,10 @@ export class TileService {
   constructor(private sprite: SpriteService) {}
 
   buildData(position: Position, board: Board) {
-    const width = board.width / board.columns;
-    const height = board.height / board.rows;
+    const size = Math.min(board.width, board.height);
+    const length = Math.max(board.rows, board.columns);
+    const height = size / length;
+    const width = size / length;// board.width / board.columns;
     // const type = colors[Math.floor(Math.random() * colors.length)];
     // const type = monsters[Math.floor(Math.random() * monsters.length)];
     const type = monsters[Math.floor(Math.random() * 4)];
