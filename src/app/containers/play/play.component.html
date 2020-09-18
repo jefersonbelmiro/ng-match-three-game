@@ -6,10 +6,10 @@
   ></app-level-status>
 
   <app-board
-    [width]="boardConfig.width"
-    [height]="boardConfig.height"
-    [rows]="boardConfig.rows"
-    [columns]="boardConfig.columns"
+    [width]="boardData.width"
+    [height]="boardData.height"
+    [rows]="boardData.rows"
+    [columns]="boardData.columns"
     (swap)="onSwap($event)"
     (select)="onSelect($event)"
   >

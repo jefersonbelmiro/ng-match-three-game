@@ -15,6 +15,7 @@ import {
   ViewChild,
   ViewContainerRef,
 } from '@angular/core';
+import { Router } from '@angular/router';
 import { EMPTY, forkJoin, Observable } from 'rxjs';
 import { finalize, switchMap } from 'rxjs/operators';
 import { EffectScoreComponent } from '../../components/effect-score/effect-score.component';
@@ -25,7 +26,7 @@ import { PowerUpService } from '../../services/power-up.service';
 import { SpriteService } from '../../services/sprite.service';
 import { StateService } from '../../services/state.service';
 import { TileService } from '../../services/tile.service';
-import { Board, Colors, Position, Tile } from '../../shared';
+import { Board, Colors, Position, Tile, Level } from '../../shared';
 
 const BOARD_SIZE = 350;
 
@@ -51,7 +52,7 @@ const BOARD_SIZE = 350;
           query('app-board', [
             style({ transform: 'scale(0)' }),
             animate(
-              '400ms 350ms',
+              '400ms 150ms',
               keyframes([
                 style({ transform: 'scale(0.5)', opacity: 0 }),
                 style({ transform: 'scale(1)', opacity: 1 }),
@@ -82,9 +83,8 @@ export class PlayComponent implements OnInit {
   rows = 5;
   columns = 5;
 
-  boardConfig: Board;
-  // @FIXME - add interface
-  levelData;
+  boardData: Board;
+  levelData: Level;
 
   @ViewChild('container', { read: ViewContainerRef, static: true })
   container: ViewContainerRef;
@@ -96,12 +96,17 @@ export class PlayComponent implements OnInit {
     private state: StateService,
     private level: LevelService,
     private sprite: SpriteService,
-    private powerUp: PowerUpService
+    private powerUp: PowerUpService,
+    private router: Router
   ) {
     this.updateSize();
   }
 
   ngOnInit() {
+    if (this.state.getValue().scene !== 'play') {
+      this.router.navigate(['/']);
+    }
+
     this.createBoard();
     this.level.create(this.board.data);
     this.level.getState().subscribe((data) => (this.levelData = data));
@@ -132,7 +137,7 @@ export class PlayComponent implements OnInit {
 
   createBoard() {
     let size = Math.min(this.width, this.height, BOARD_SIZE);
-    this.boardConfig = {
+    this.boardData = {
       rows: this.rows,
       columns: this.columns,
       width: size,
@@ -143,7 +148,7 @@ export class PlayComponent implements OnInit {
 
     const createTile = this.tileBuilder.createFactory();
     const destroyTile = this.tileBuilder.destroyFactory();
-    this.board.create(this.boardConfig, {
+    this.board.create(this.boardData, {
       createTile,
       destroyTile,
     });
@@ -151,8 +156,8 @@ export class PlayComponent implements OnInit {
 
   updateBoard() {
     let size = Math.min(this.width, this.height, BOARD_SIZE);
-    this.boardConfig = { ...this.board, width: size, height: size };
-    this.board.update(this.boardConfig);
+    this.boardData = { ...this.board, width: size, height: size };
+    this.board.update(this.boardData);
   }
 
   onSelect(tile: Tile) {
@@ -272,8 +277,8 @@ export class PlayComponent implements OnInit {
 
   createScoreEffect({ row, column }, value: number) {
     const ref = this.sprite.create(EffectScoreComponent);
-    const width = this.boardConfig.width / this.boardConfig.columns;
-    const height = this.boardConfig.height / this.boardConfig.rows;
+    const width = this.boardData.width / this.boardData.columns;
+    const height = this.boardData.height / this.boardData.rows;
     const score = ref.instance;
     score.value = value;
     score.x = width * column + width / 2 - 15;

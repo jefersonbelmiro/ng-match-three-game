@@ -41,3 +41,13 @@ export interface PowerUp {
   value: number;
   type: PowerUps;
 }
+
+export interface Level {
+  moves: number;
+  score: number;
+  level: number;
+  target: {
+    type: Colors;
+    remain: number;
+  }[];
+}

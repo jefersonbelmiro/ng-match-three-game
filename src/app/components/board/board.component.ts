@@ -37,6 +37,7 @@ export class BoardComponent implements Board, OnInit {
   @HostListener('mousedown', ['$event'])
   @HostListener('touchstart', ['$event'])
   onInputDown(event: MouseEvent) {
+    event.preventDefault();
     const data = this.input.onDown(event);
     if (!data) {
       return;
@@ -51,6 +52,7 @@ export class BoardComponent implements Board, OnInit {
   @HostListener('mousemove', ['$event'])
   @HostListener('touchmove', ['$event'])
   onMouseMove(event: MouseEvent) {
+    event.preventDefault();
     const data = this.input.onMove(event);
     if (data) {
       this.swap.emit(data);

@@ -5,7 +5,7 @@ import {
   transition,
   trigger,
 } from '@angular/animations';
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, HostListener } from '@angular/core';
 import { StateService } from '../../services/state.service';
 import { PowerUp } from '../../shared';
 
@@ -52,5 +52,15 @@ export class PowerUpsComponent implements OnInit {
 
   getItemAnimation(item: PowerUp) {
     return item === this.selected ? 'selected' : 'idle';
+  }
+
+  @HostListener('touchstart', ['$event'])
+  onInputDown(event: MouseEvent) {
+    console.log('touchstart', event.target);
+    if (event.cancelable) {
+      event.preventDefault();
+      event.stopPropagation();
+    }
+    (event.target as HTMLElement).click();
   }
 }

@@ -112,7 +112,7 @@ export class TileComponent extends SpriteComponent implements Tile, OnChanges {
     return this.animate(animations).subscribe();
   }
 
-  private playSelectionAnimation() {
+  playSelectionAnimation() {
     const animations = [
       query(
         '.sprite img',

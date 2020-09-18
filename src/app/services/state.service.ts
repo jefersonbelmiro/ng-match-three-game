@@ -1,7 +1,8 @@
 import { Injectable } from '@angular/core';
-import { Store, Tile, PowerUp, PowerUps } from '../shared';
+import { Store, Tile, PowerUp, PowerUps, Colors, Level } from '../shared';
 
-const INITIAL_STATE = {
+const initialStateFactory = () => ({
+  scene: 'menu' as const,
   busy: 0,
   powerUps: [
     {
@@ -19,16 +20,19 @@ const INITIAL_STATE = {
     {
       type: PowerUps.Axe,
       value: 99,
-    }
-  ]
-};
+    },
+  ],
+});
 
 export interface State {
+  scene: 'menu' | 'play';
   busy: number;
   selected?: Tile;
 
   selectedPowerUp?: PowerUp;
   powerUps?: PowerUp[];
+
+  level?: Level;
 }
 
 @Injectable({
@@ -36,7 +40,7 @@ export interface State {
 })
 export class StateService extends Store<State> {
   constructor() {
-    super(INITIAL_STATE);
+    super(initialStateFactory());
   }
 
   setBusy(busy: boolean) {

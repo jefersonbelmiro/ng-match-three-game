@@ -14,6 +14,7 @@ import { PlayBackgroundComponent } from '../components/play-background/play-back
 import { EffectHorizontalArrowComponent } from '../components/effect-horizontal-arrow/effect-horizontal-arrow.component';
 import { EffectVerticalArrowComponent } from '../components/effect-vertical-arrow/effect-vertical-arrow.component';
 import { EffectAxeComponent } from '../components/effect-axe/effect-axe.component';
+import { MenuComponent } from '../containers/menu/menu.component';
 
 @NgModule({
   declarations: [
@@ -29,6 +30,7 @@ import { EffectAxeComponent } from '../components/effect-axe/effect-axe.componen
     EffectHorizontalArrowComponent,
     EffectVerticalArrowComponent,
     EffectAxeComponent,
+    MenuComponent,
   ],
   imports: [CommonModule, PlayRoutingModule, FontAwesomeModule,],
 })

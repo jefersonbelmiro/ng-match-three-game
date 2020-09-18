@@ -22,6 +22,11 @@ body {
   overscroll-behavior: contain;
 }
 
+img {
+  pointer-events: none;
+  -webkit-touch-callout: none;
+}
+
 [hidden] {
   display: none !important;
 }

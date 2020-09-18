@@ -1,54 +1,21 @@
 import { Injectable } from '@angular/core';
-import { Colors, Store, Tile } from '../shared';
-
-interface State {
-  moves: number;
-  score: number;
-  level: number;
-  target: {
-    type: Colors;
-    remain: number;
-  }[];
-}
-
-const INITIAL_STATE = {
-  moves: 0,
-  score: 0,
-  level: 0,
-  target: [],
-};
+import { Colors, Level, Tile } from '../shared';
+import { StateService } from './state.service';
+import { map } from 'rxjs/operators';
 
 @Injectable({
   providedIn: 'root',
 })
-export class LevelService extends Store<State> {
-  constructor() {
-    super(INITIAL_STATE);
-  }
-
-  private extractTypes(data: Tile[][], slice = 0) {
-    const types = [];
-    for (let row = 0; row < data.length; row++) {
-      const columns = data[row];
-      for (let column = 0; column < columns.length; column++) {
-        const data = columns[column] as Tile;
-        if (!types.includes(data.type)) {
-          types.push(data.type);
-        }
-      }
-    }
-
-    return types.sort(() => Math.random() - 0.5).slice(slice);
-  }
+export class LevelService {
+  constructor(private state: StateService) {}
 
   create(boardData: Tile[][]) {
-    const current = this.getValue();
-    const level = current.level + 1;
+    const level = 1;
     const moves = Math.ceil(level / 2) * 10 * 10;
 
     const target = [];
     const types = this.extractTypes(boardData);
-    const length = 2;//Math.min(Math.ceil(level), types.length);
+    const length = 2; //Math.min(Math.ceil(level), types.length);
 
     for (let index = 0; index < length; index++) {
       const type = types[index % types.length];
@@ -58,11 +25,20 @@ export class LevelService extends Store<State> {
       });
     }
 
-    this.set({ level, moves, target });
+    this.set({ score: 0, level, moves, target });
   }
 
-  set(data: Partial<State>) {
-    this.setState({ ...this.getValue(), ...data });
+  set(data: Partial<Level>) {
+    const current = this.state.getValue().level;
+    this.state.set({ level: { ...current, ...data } });
+  }
+
+  getValue() {
+    return this.state.getValue().level;
+  }
+
+  getState() {
+    return this.state.getState().pipe(map((state) => state.level));
   }
 
   updateMoves() {
@@ -88,5 +64,20 @@ export class LevelService extends Store<State> {
   updateScore(value: number) {
     const score = this.getValue().score + value;
     this.set({ score });
+  }
+
+  private extractTypes(data: Tile[][], slice = 0) {
+    const types = [];
+    for (let row = 0; row < data.length; row++) {
+      const columns = data[row];
+      for (let column = 0; column < columns.length; column++) {
+        const data = columns[column] as Tile;
+        if (!types.includes(data.type)) {
+          types.push(data.type);
+        }
+      }
+    }
+
+    return types.sort(() => Math.random() - 0.5).slice(slice);
   }
 }

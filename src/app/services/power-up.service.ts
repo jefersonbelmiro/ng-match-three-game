@@ -1,4 +1,5 @@
 import { Injectable } from '@angular/core';
+import { of, Subject } from 'rxjs';
 import { EffectAxeComponent } from '../components/effect-axe/effect-axe.component';
 import { EffectHorizontalArrowComponent } from '../components/effect-horizontal-arrow/effect-horizontal-arrow.component';
 import { EffectVerticalArrowComponent } from '../components/effect-vertical-arrow/effect-vertical-arrow.component';
@@ -6,8 +7,6 @@ import { PowerUp, PowerUps, Tile } from '../shared';
 import { BoardService } from './board.service';
 import { SpriteService } from './sprite.service';
 import { StateService } from './state.service';
-import { of, Subject } from 'rxjs';
-import { delay } from 'rxjs/operators';
 
 @Injectable({
   providedIn: 'root',

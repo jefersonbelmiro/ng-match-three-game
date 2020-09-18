@@ -1,0 +1,14 @@
+<div class="content">
+  <div class="logo">
+    <app-tile
+      [type]="tileData.type"
+      [row]="tileData.row"
+      [column]="tileData.column"
+      [width]="tileData.width"
+      [height]="tileData.height"
+    ></app-tile>
+  </div>
+  <button (click)="onStart()" class="btn">START</button>
+</div>
+
+<app-play-background></app-play-background>
