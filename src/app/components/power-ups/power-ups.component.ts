@@ -5,7 +5,7 @@ import {
   transition,
   trigger,
 } from '@angular/animations';
-import { Component, OnInit, HostListener } from '@angular/core';
+import { Component, OnInit, HostListener, HostBinding } from '@angular/core';
 import { StateService } from '../../services/state.service';
 import { PowerUp } from '../../shared';
 
@@ -19,9 +19,16 @@ import { PowerUp } from '../../shared';
       state('idle', style({ transform: 'scale(1)' })),
       transition('idle <=> selected', animate(100)),
     ]),
+    trigger('enterAnim', [
+      transition(':enter', [
+        style({ transform: 'translateY(50%)', opacity: 0 }),
+        animate('500ms', style({ transform: 'translateY(0)', opacity: 1 })),
+      ]),
+    ]),
   ],
 })
 export class PowerUpsComponent implements OnInit {
+  @HostBinding('@enterAnim') enterAnim: string;
   data: PowerUp[] = [];
   selected: PowerUp;
 
@@ -56,7 +63,6 @@ export class PowerUpsComponent implements OnInit {
 
   @HostListener('touchstart', ['$event'])
   onInputDown(event: MouseEvent) {
-    console.log('touchstart', event.target);
     if (event.cancelable) {
       event.preventDefault();
       event.stopPropagation();

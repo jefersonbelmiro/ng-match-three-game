@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { BoardService } from './board.service';
-import { Tile, Store } from '../shared';
+import { Tile, Store, getTileSize } from '../shared';
 import { StateService } from './state.service';
 
 interface State {
@@ -28,8 +28,7 @@ export class InputService extends Store<State> {
     const source = this.globalState.getValue().selected;
     const pointer = this.getPointer(event);
     const rect = this.getValue().element.getBoundingClientRect();
-    const width = this.board.width / this.board.columns;
-    const height = this.board.height / this.board.rows;
+    const { width, height } = getTileSize(this.board);
     const column = Math.floor((pointer.x - rect.left) / width);
     const row = Math.floor((pointer.y - rect.top) / height);
     const target = this.board.getAt({ row, column });

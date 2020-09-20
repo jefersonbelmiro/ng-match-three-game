@@ -13,21 +13,17 @@ export enum Colors {
 
 export enum Monsters {
   Unicorn = 'assets/monsters/unicorn/Unicorn_1.png',
-  Rabbit = 'assets/monsters/rabbit/Rabbit_1.png',
   Pig = 'assets/monsters/pig/Pig_1.png',
-
+  Rabbit = 'assets/monsters/rabbit/Rabbit_1.png',
   Spider = 'assets/monsters/spider/01.png',
+  Lizard = 'assets/monsters/lizard/Lizard_1.png',
+  Cat = 'assets/monsters/cat/Cat_1.png',
   Octopus = 'assets/monsters/octopus/Octopus_1.png',
   Owl = 'assets/monsters/owl/Owl_1.png',
-
   Sheep = 'assets/monsters/sheep/Sheep_1.png',
 
-  Lizard = 'assets/monsters/lizard/Lizard_1.png',
-
-  Cat = 'assets/monsters/cat/Cat_1.png',
-
-  Rainbow = 'assets/monsters/rainbow/Rainbow_1.png',
-  Dragon = 'assets/monsters/dragon/Head_1.png',
+  // Rainbow = 'assets/monsters/rainbow/Rainbow_1.png',
+  // Dragon = 'assets/monsters/dragon/Head_1.png',
 }
 
 export enum PowerUps {
@@ -45,9 +41,11 @@ export interface PowerUp {
 export interface Level {
   moves: number;
   score: number;
-  level: number;
+  current: number;
   target: {
-    type: Colors;
+    type: string;
     remain: number;
   }[];
+  tiles: number[][];
+  types: number[];
 }

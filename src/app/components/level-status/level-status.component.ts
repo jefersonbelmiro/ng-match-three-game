@@ -6,8 +6,16 @@ import {
   transition,
   trigger,
   useAnimation,
+  state,
+  query,
 } from '@angular/animations';
-import { Component, Input, OnChanges, SimpleChanges } from '@angular/core';
+import {
+  Component,
+  Input,
+  OnChanges,
+  SimpleChanges,
+  HostBinding,
+} from '@angular/core';
 import {
   faArrowsAlt,
   faCheck,
@@ -32,6 +40,12 @@ const heartBeat = animation([
   templateUrl: './level-status.component.html',
   styleUrls: ['./level-status.component.scss'],
   animations: [
+    trigger('enterAnim', [
+      transition(':enter', [
+        style({ transform: 'translateY(-50%)', opacity: 0 }),
+        animate('500ms', style({ transform: 'translateY(0)', opacity: 1 })),
+      ]),
+    ]),
     trigger('valueAnimation', [
       transition(':increment', [useAnimation(heartBeat)], {
         params: { duration: 300, scale: 1.5, delay: 0 },
@@ -42,12 +56,14 @@ const heartBeat = animation([
     ]),
     trigger('targetAnimation', [
       transition(':decrement', [useAnimation(heartBeat)], {
-        params: { duration: 300, scale: 1.5, delay: 800 },
+        params: { duration: 300, scale: 1.5, delay: 0 },
       }),
     ]),
   ],
 })
 export class LevelStatusComponent implements OnChanges {
+  @HostBinding('@enterAnim') enterAnim: string;
+
   @Input() target = [];
   @Input() score = 0;
   @Input() moves = 0;

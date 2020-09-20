@@ -25,8 +25,8 @@ import { MatchService } from '../../services/match.service';
 import { PowerUpService } from '../../services/power-up.service';
 import { SpriteService } from '../../services/sprite.service';
 import { StateService } from '../../services/state.service';
+import { Board, Position, Tile, Level } from '../../shared';
 import { TileService } from '../../services/tile.service';
-import { Board, Colors, Position, Tile, Level } from '../../shared';
 
 const BOARD_SIZE = 350;
 
@@ -34,49 +34,8 @@ const BOARD_SIZE = 350;
   selector: 'app-play',
   templateUrl: './play.component.html',
   styleUrls: ['./play.component.scss'],
-  animations: [
-    trigger('fadeIn', [
-      transition(':enter', [
-        group([
-          query('app-level-status', [
-            style({ transform: 'scale(0)' }),
-            animate(
-              '300ms 150ms',
-              keyframes([
-                style({ transform: 'translateY(-50%)', opacity: 0 }),
-                style({ transform: 'translateY(0)', opacity: 1 }),
-              ])
-            ),
-          ]),
-
-          query('app-board', [
-            style({ transform: 'scale(0)' }),
-            animate(
-              '400ms 150ms',
-              keyframes([
-                style({ transform: 'scale(0.5)', opacity: 0 }),
-                style({ transform: 'scale(1)', opacity: 1 }),
-              ])
-            ),
-          ]),
-
-          query('app-power-ups', [
-            style({ transform: 'scale(0)' }),
-            animate(
-              '300ms 350ms',
-              keyframes([
-                style({ transform: 'translateY(50%)', opacity: 0 }),
-                style({ transform: 'translateY(0)', opacity: 1 }),
-              ])
-            ),
-          ]),
-        ]),
-      ]),
-    ]),
-  ],
 })
 export class PlayComponent implements OnInit {
-  @HostBinding('@fadeIn') fadeIn: string;
   width = 400;
   height = 400;
 
@@ -107,9 +66,9 @@ export class PlayComponent implements OnInit {
       this.router.navigate(['/']);
     }
 
-    this.createBoard();
-    this.level.create(this.board.data);
+    this.level.create();
     this.level.getState().subscribe((data) => (this.levelData = data));
+    this.createBoard();
   }
 
   @HostListener('window:resize')
@@ -145,10 +104,10 @@ export class PlayComponent implements OnInit {
     };
 
     this.sprite.setContainer(this.container);
-
     const createTile = this.tileBuilder.createFactory();
     const destroyTile = this.tileBuilder.destroyFactory();
-    this.board.create(this.boardData, {
+
+    this.board.create(this.boardData, this.levelData, {
       createTile,
       destroyTile,
     });
@@ -188,7 +147,11 @@ export class PlayComponent implements OnInit {
   doSwap(source: Tile, target: Tile) {
     const sourceTile = this.board.getAt(source);
     const targetTile = this.board.getAt(target);
-    const shifts = [sourceTile.shift(target), targetTile.shift(source)];
+    const options = { fallingAnimatin: false };
+    const shifts = [
+      sourceTile.shift(target, options),
+      targetTile.shift(source, options),
+    ];
     this.state.setBusy(true);
     return forkJoin(shifts).pipe(
       finalize(() => {
@@ -217,28 +180,28 @@ export class PlayComponent implements OnInit {
 
   updateLevel(matches: Tile[]) {
     const deaths = [];
-    const types = matches
+    matches
       .filter((item, index, array) => {
         return array.indexOf(item) === index;
       })
-      .reduce((data, current: Tile) => {
-        if (!data[current.type]) {
-          data[current.type] = 0;
-        }
-        if (this.level.isTargetType(current.type as Colors)) {
-          deaths.push(current.die('target'));
+      .forEach((current: Tile) => {
+        if (this.level.isTargetType(current.type)) {
+          deaths.push(
+            current.die('target').pipe(
+              finalize(() => {
+                // total target animation is 800ms
+                // die animation complete in 400ms
+                // wait more 200ms to update score
+                setTimeout(() => {
+                  this.level.updateTarget(current.type, 1);
+                }, 200);
+              })
+            )
+          );
         } else {
           deaths.push(current.die());
         }
-        data[current.type] += 1;
-        return data;
-      }, {});
-
-    Object.keys(types).forEach((type) => {
-      if (this.level.isTargetType(type as Colors)) {
-        this.level.updateTarget(type as Colors, types[type]);
-      }
-    });
+      });
 
     const scoreValue = matches.length * 10;
     this.createScoreEffect(matches[0], scoreValue).subscribe(() => {

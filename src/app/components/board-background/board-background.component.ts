@@ -5,6 +5,7 @@ import {
   Input,
   ViewChild,
 } from '@angular/core';
+import { getTileSize } from '../../shared';
 
 @Component({
   selector: 'app-board-background',
@@ -37,19 +38,15 @@ export class BoardBackgroundComponent implements AfterViewInit {
     const element = this.canvasRef.nativeElement as HTMLCanvasElement;
     const context = element.getContext('2d');
 
-    const size = Math.min(this.width, this.height);
-    const length = Math.max(this.rows, this.columns);
-    const height = size / length;
-    const width = size / length;// board.width / board.columns;
-
-
-    // const height = this.height / this.rows;
-    // const width = height;//this.width / this.columns;
+    const { width, height } = getTileSize(this);
     context.clearRect(0, 0, this.width, this.height);
 
     for (let row = 0; row < this.rows; row++) {
       for (let column = 0; column < this.columns; column++) {
-        context.fillStyle = (row + column) % 2 == 0 ? 'rgba(255,255,255, 0)' : 'rgba(255, 255, 255, 0.1)';
+        context.fillStyle =
+          (row + column) % 2 == 0
+            ? 'rgba(255,255,255, 0)'
+            : 'rgba(255, 255, 255, 0.1)';
         // context.fillStyle = 'rgba(0,0,0, 0.2)';
         context.fillRect(column * width, row * height, width, height);
 

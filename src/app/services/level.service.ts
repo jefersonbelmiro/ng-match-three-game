@@ -1,7 +1,44 @@
 import { Injectable } from '@angular/core';
-import { Colors, Level, Tile } from '../shared';
+import { Level, Tile, Monsters } from '../shared';
 import { StateService } from './state.service';
 import { map } from 'rxjs/operators';
+
+const LEVEL_DATA = [
+  {
+    current: 1,
+    moves: 10,
+    types: [0, 1, 2, 3],
+    target: {
+      types: [0],
+      size: 10,
+    },
+    tiles: [
+      [0, 1, 0, 2, 2],
+      [0, 1, 2, 1, 1],
+      [2, 0, 1, 2, 1],
+      [0, 1, 2, 0, 0],
+      [0, 2, 1, 0, 1],
+    ],
+  },
+  {
+    current: 2,
+    moves: 10,
+    types: [0, 1, 2, 3, 4],
+    target: {
+      types: [1],
+      size: 30,
+    },
+    tiles: [
+      [0, 1, 0, 2, 2],
+      [0, 1, 2, 1, 1],
+      [2, 0, 1, 2, 1],
+      [0, 1, 2, 0, 0],
+      [0, 2, 1, 0, 1],
+    ],
+  },
+];
+
+const monsters = Object.keys(Monsters);
 
 @Injectable({
   providedIn: 'root',
@@ -9,23 +46,19 @@ import { map } from 'rxjs/operators';
 export class LevelService {
   constructor(private state: StateService) {}
 
-  create(boardData: Tile[][]) {
-    const level = 1;
-    const moves = Math.ceil(level / 2) * 10 * 10;
+  create() {
+    const current = 0;
+    const data = LEVEL_DATA[current];
+    const { moves, tiles, types } = data;
 
-    const target = [];
-    const types = this.extractTypes(boardData);
-    const length = 2; //Math.min(Math.ceil(level), types.length);
+    const target = data.target.types.map((typeIndex) => {
+      return {
+        type: monsters[typeIndex],
+        remain: data.target.size,
+      };
+    });
 
-    for (let index = 0; index < length; index++) {
-      const type = types[index % types.length];
-      target.push({
-        type,
-        remain: Math.ceil(level / 2) * 6 * 3,
-      });
-    }
-
-    this.set({ score: 0, level, moves, target });
+    this.set({ score: 0, current, moves, target, tiles, types });
   }
 
   set(data: Partial<Level>) {
@@ -46,12 +79,12 @@ export class LevelService {
     this.set({ moves });
   }
 
-  isTargetType(type: Colors) {
+  isTargetType(type: string) {
     const target = this.getValue().target;
     return target.find((item) => item.type === type && item.remain > 0);
   }
 
-  updateTarget(type: Colors, length: number) {
+  updateTarget(type: string, length: number) {
     const target = this.getValue().target.slice();
     const found = target.find((item) => item.type === type);
     if (!found) {
@@ -64,20 +97,5 @@ export class LevelService {
   updateScore(value: number) {
     const score = this.getValue().score + value;
     this.set({ score });
-  }
-
-  private extractTypes(data: Tile[][], slice = 0) {
-    const types = [];
-    for (let row = 0; row < data.length; row++) {
-      const columns = data[row];
-      for (let column = 0; column < columns.length; column++) {
-        const data = columns[column] as Tile;
-        if (!types.includes(data.type)) {
-          types.push(data.type);
-        }
-      }
-    }
-
-    return types.sort(() => Math.random() - 0.5).slice(slice);
   }
 }

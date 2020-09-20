@@ -6,9 +6,14 @@ import {
   Input,
   OnInit,
   Output,
+  HostBinding,
 } from '@angular/core';
 import { InputService } from '../../services/input.service';
 import { Board } from '../../shared';
+import { trigger } from '@angular/animations';
+import { transition } from '@angular/animations';
+import { style } from '@angular/animations';
+import { animate } from '@angular/animations';
 
 @Component({
   selector: 'app-board',
@@ -18,8 +23,17 @@ import { Board } from '../../shared';
     '[style.width.px]': 'width',
     '[style.height.px]': 'height',
   },
+  animations: [
+    trigger('enterAnim', [
+      transition(':enter', [
+        style({ transform: 'scale(0.5)', opacity: 0 }),
+        animate('500ms', style({ transform: 'scale(1)', opacity: 1 })),
+      ]),
+    ]),
+  ],
 })
 export class BoardComponent implements Board, OnInit {
+  @HostBinding('@enterAnim') enterAnim: string;
   @Input() width: number;
   @Input() height: number;
   @Input() rows: number;

@@ -1,6 +1,5 @@
 import {
   animate,
-  animation,
   AnimationBuilder,
   group,
   keyframes,
@@ -9,20 +8,17 @@ import {
   useAnimation,
 } from '@angular/animations';
 import {
+  ChangeDetectionStrategy,
   Component,
   ElementRef,
   Input,
-  ChangeDetectorRef,
-  NgZone,
-  ChangeDetectionStrategy,
-  HostBinding,
   OnChanges,
 } from '@angular/core';
 import { Observable, Subscriber, timer } from 'rxjs';
 import { tap } from 'rxjs/operators';
 import { BoardService } from '../../services/board.service';
 import { StateService } from '../../services/state.service';
-import { Colors, Monsters, Position, Tile, TileState } from '../../shared';
+import { Position, Tile, TileState } from '../../shared';
 import { targetAnimationFactory } from '../../shared/animations';
 import { Sprite } from '../../shared/sprite';
 import { SpriteComponent } from '../sprite/sprite.component';
@@ -30,9 +26,6 @@ import { SpriteComponent } from '../sprite/sprite.component';
 const random = (min: number, max: number) => {
   return Math.floor(Math.random() * (max - min + 1) + min);
 };
-
-const colors = Object.keys(Colors);
-const monsters = Object.keys(Monsters);
 
 @Component({
   selector: 'app-tile',
@@ -136,9 +129,13 @@ export class TileComponent extends SpriteComponent implements Tile, OnChanges {
     return this.state === TileState.Idle;
   }
 
-  shift({ row, column }: Position) {
+  shift({ row, column }: Position, options = { fallingAnimatin: true }) {
     const translateX = column * this.width - this.x;
     const translateY = row * this.height - this.y;
+
+    const falling = options.fallingAnimatin && row > this.row;
+    const speed = random(150, 250);
+
     const animations = [
       group([
         style({ transform: 'translate(0, 0)', zIndex: 5 }),
@@ -149,6 +146,7 @@ export class TileComponent extends SpriteComponent implements Tile, OnChanges {
             zIndex: 5,
           })
         ),
+        ...(falling ? this.rubberBandAnimation(speed, 250) : []),
       ]),
     ];
 
@@ -163,30 +161,44 @@ export class TileComponent extends SpriteComponent implements Tile, OnChanges {
 
   rubberBandAnimation(duration: number, delay: number) {
     return [
-      animate(
-        `${duration}ms ${delay}ms`,
-        keyframes([
-          style({
-            transform: 'scale(1, 1)',
-            easing: 'ease',
-            offset: 0,
-          }),
-          style({
-            transform: 'scale(1.07, 0.7) translateY(18%)',
-            easing: 'ease',
-            offset: 0.3,
-          }),
-          style({
-            transform: 'scale(0.9, 1.07) translateY(-8%)',
-            easing: 'ease',
-            offset: 0.6,
-          }),
-          style({
-            transform: 'scale(1, 1) translateY(0%)',
-            easing: 'ease',
-            offset: 1,
-          }),
-        ])
+      query(
+        '.sprite img',
+        animate(
+          '400ms 100ms steps(4)',
+          keyframes([
+            style({ transform: `translateX(-180px)` }),
+            style({ transform: `translateX(-420px)` }),
+          ])
+        )
+      ),
+
+      query(
+        '.sprite',
+        animate(
+          `${duration}ms ${delay}ms`,
+          keyframes([
+            style({
+              transform: 'scale(1, 1)',
+              easing: 'ease',
+              offset: 0,
+            }),
+            style({
+              transform: 'scale(1.07, 0.7) translateY(18%)',
+              easing: 'ease',
+              offset: 0.3,
+            }),
+            style({
+              transform: 'scale(0.9, 1.07) translateY(-8%)',
+              easing: 'ease',
+              offset: 0.6,
+            }),
+            style({
+              transform: 'scale(1, 1) translateY(0%)',
+              easing: 'ease',
+              offset: 1,
+            }),
+          ])
+        )
       ),
     ];
   }

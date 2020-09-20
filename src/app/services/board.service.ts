@@ -1,33 +1,44 @@
-import { ComponentRef, Injectable } from '@angular/core';
-import { Board, Position, Tile } from '../shared';
+import { Injectable, ComponentRef } from '@angular/core';
+import { Board, getTileSize, Monsters, Position, Tile, Level } from '../shared';
+import { TileService } from './tile.service';
+
+const monsters = Object.keys(Monsters);
 
 @Injectable({
   providedIn: 'root',
 })
 export class BoardService {
   data: Tile[][] = [];
-  createTile: (board: Board, position: Position) => ComponentRef<Tile>;
-  destroyTile: (data: Tile) => void;
   rows: number;
   columns: number;
   height: number;
   width: number;
+  types: number[];
+  createTile: (
+    board: Board,
+    position: Position,
+    type: string
+  ) => ComponentRef<Tile>;
+  destroyTile: (data: Tile) => void;
 
   constructor() {}
 
-  create(board: Board, { createTile, destroyTile }) {
+  create(board: Board, levelData: Level, { createTile, destroyTile }) {
     this.data = [];
     this.rows = board.rows;
     this.columns = board.columns;
     this.width = board.width;
     this.height = board.height;
+    this.types = levelData.types;
     this.createTile = createTile;
     this.destroyTile = destroyTile;
 
-    for (let row = 0; row < this.rows; row++) {
+    const typeIndex = levelData.tiles;
+    for (let row = 0; row < typeIndex.length; row++) {
       this.data[row] = [];
-      for (let column = 0; column < this.columns; column++) {
-        this.crateAt({ row, column });
+      for (let column = 0; column < typeIndex[row].length; column++) {
+        const index = typeIndex[row][column];
+        this.crateAt({ row, column }, monsters[index]);
       }
     }
   }
@@ -40,16 +51,18 @@ export class BoardService {
       for (let column = 0; column < columns.length; column++) {
         const tile = this.getAt({ row, column });
         if (tile) {
-          const width = board.width / board.columns;
-          const height = board.height / board.rows;
-          Object.assign(tile, { width, height });
+          Object.assign(tile, getTileSize(board));
         }
       }
     }
   }
 
-  crateAt(position: Position) {
-    const ref = this.createTile(this, position);
+  crateAt(position: Position, type?: string) {
+    if (!type) {
+      const typeIndex = this.types[Math.floor(Math.random() * this.types.length)];
+      type = monsters[typeIndex];
+    }
+    const ref = this.createTile(this, position, type);
     this.setAt(position, ref.instance);
     return ref.instance;
   }
