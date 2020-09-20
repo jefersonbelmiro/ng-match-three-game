@@ -73,7 +73,7 @@ const LEVEL_DATA = [
     moves: 30,
     types: [1, 2, 3, 4],
     target: {
-      types: [2, 3, 4],
+      types: [3, 4],
       size: 20,
     },
     tiles: [

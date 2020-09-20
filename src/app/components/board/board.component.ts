@@ -26,8 +26,8 @@ import { animate } from '@angular/animations';
   animations: [
     trigger('enterAnim', [
       transition(':enter', [
-        style({ transform: 'scale(0.5)', opacity: 0 }),
-        animate('500ms', style({ transform: 'scale(1)', opacity: 1 })),
+        style({ transform: 'scale(0.7)', opacity: 0 }),
+        animate('300ms', style({ transform: 'scale(1)', opacity: 1 })),
       ]),
     ]),
   ],

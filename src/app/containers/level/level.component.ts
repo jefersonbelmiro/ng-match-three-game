@@ -21,7 +21,7 @@ export class LevelComponent implements OnInit {
 
     this.service.create();
 
-    timer(3000).subscribe(() => {
+    timer(4000).subscribe(() => {
       this.play();
     });
   }

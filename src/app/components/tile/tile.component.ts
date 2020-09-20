@@ -144,8 +144,8 @@ export class TileComponent extends SpriteComponent implements Tile, OnChanges {
     const translateX = column * this.width - this.x;
     const translateY = row * this.height - this.y;
 
-    const falling = options.fallingAnimatin && row > this.row;
-    const speed = random(150, 250);
+    // const falling = options.fallingAnimatin && row > this.row;
+    // const speed = random(150, 250);
 
     const animations = [
       group([
@@ -157,7 +157,7 @@ export class TileComponent extends SpriteComponent implements Tile, OnChanges {
             zIndex: 5,
           })
         ),
-        ...(falling ? this.rubberBandAnimation(speed, 250) : []),
+        // ...(falling ? this.rubberBandAnimation(speed, 250) : []),
       ]),
     ];
 
