@@ -1,0 +1,20 @@
+<div class="content">
+  <div class="current">LEVEL {{ current + 1 }}</div>
+
+  <div class="info">
+    <div class="target">
+      <label>target</label>
+      <div class="target-item" *ngFor="let item of target">
+        <app-tile [type]="item.type"></app-tile>
+        <div class="remain">
+          <span>x{{ item.remain }}</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="moves">
+      <label>moves</label>
+      <span>{{ moves }}</span>
+    </div>
+  </div>
+</div>

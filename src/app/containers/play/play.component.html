@@ -19,4 +19,6 @@
   <app-power-ups></app-power-ups>
 </div>
 
+<app-level-end *ngIf="levelComplete" [current]="levelData.current"></app-level-end>
+
 <app-play-background></app-play-background>

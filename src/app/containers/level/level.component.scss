@@ -1,0 +1,15 @@
+:host {
+  display: block;
+  height: 100%;
+}
+
+.content {
+  color: white;
+  font-family: "Titan One", cursive;
+  font-size: 40px;
+  text-shadow: -1px 0 black, 0 1px black, 1px 0 black, 0 -1px black;
+  display: flex;
+  height: 100%;
+  justify-content: center;
+  align-items: center;
+}

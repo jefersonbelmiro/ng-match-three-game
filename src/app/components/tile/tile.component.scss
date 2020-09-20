@@ -1,6 +1,9 @@
 :host {
   padding: 3px;
-  position: absolute;
+
+  &.absolute {
+    position: absolute;
+  }
 
   // &.no-selected {
   //   .sprite {

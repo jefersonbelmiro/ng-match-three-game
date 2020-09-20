@@ -6,15 +6,13 @@ import {
   transition,
   trigger,
   useAnimation,
-  state,
-  query,
 } from '@angular/animations';
 import {
   Component,
+  HostBinding,
   Input,
   OnChanges,
   SimpleChanges,
-  HostBinding,
 } from '@angular/core';
 import {
   faArrowsAlt,

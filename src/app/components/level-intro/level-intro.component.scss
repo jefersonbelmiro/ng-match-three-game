@@ -1,0 +1,87 @@
+:host {
+  position: absolute;
+  left: 0;
+  top: 0;
+  z-index: 200;
+  height: 100%;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  color: white;
+  font-family: "Titan One", cursive;
+  text-shadow: -1px 0 black, 0 1px black, 1px 0 black, 0 -1px black;
+}
+
+.content {
+  padding: 20px 0;
+  margin: auto;
+  height: 100%;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
+}
+
+.current {
+  font-size: 40px;
+}
+
+.info {
+  display: flex;
+  width: 100%;
+  justify-content: center;
+  flex-direction: column;
+  align-items: center;
+  label {
+    font-size: 25px;
+  }
+
+  > div {
+    font-family: "Titan One", cursive;
+
+    background: rgba(0, 0, 0, 0.6);
+    padding: 5px;
+    width: 100%;
+    max-width: 200px;
+    margin-top: 20px;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+
+    label {
+      font-family: "PT Mono", monospace;
+      text-shadow: none;
+    }
+  }
+}
+
+.target {
+  .target-item {
+    display: flex;
+    justify-content: center;
+    padding: 5px;
+    position: relative;
+
+    .remain {
+      position: absolute;
+      bottom: 0;
+      right: 0;
+      padding: 0 5px;
+      font-size: 18px;
+    }
+
+    .type {
+      flex: 1;
+      max-height: 40px;
+    }
+  }
+}
+
+.moves {
+  span {
+    font-size: 40px;
+  }
+}

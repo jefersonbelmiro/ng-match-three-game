@@ -1,23 +1,13 @@
 import {
-  animate,
-  group,
-  keyframes,
-  query,
-  style,
-  transition,
-  trigger,
-} from '@angular/animations';
-import {
   Component,
-  HostBinding,
   HostListener,
   OnInit,
   ViewChild,
   ViewContainerRef,
 } from '@angular/core';
 import { Router } from '@angular/router';
-import { EMPTY, forkJoin, Observable } from 'rxjs';
-import { finalize, switchMap } from 'rxjs/operators';
+import { EMPTY, forkJoin, Observable, ReplaySubject, timer } from 'rxjs';
+import { finalize, switchMap, takeUntil } from 'rxjs/operators';
 import { EffectScoreComponent } from '../../components/effect-score/effect-score.component';
 import { BoardService } from '../../services/board.service';
 import { LevelService } from '../../services/level.service';
@@ -25,8 +15,8 @@ import { MatchService } from '../../services/match.service';
 import { PowerUpService } from '../../services/power-up.service';
 import { SpriteService } from '../../services/sprite.service';
 import { StateService } from '../../services/state.service';
-import { Board, Position, Tile, Level } from '../../shared';
 import { TileService } from '../../services/tile.service';
+import { Board, Level, Position, Tile } from '../../shared';
 
 const BOARD_SIZE = 350;
 
@@ -44,6 +34,8 @@ export class PlayComponent implements OnInit {
 
   boardData: Board;
   levelData: Level;
+  levelComplete: boolean;
+  destroyed$ = new ReplaySubject(1);
 
   @ViewChild('container', { read: ViewContainerRef, static: true })
   container: ViewContainerRef;
@@ -62,13 +54,24 @@ export class PlayComponent implements OnInit {
   }
 
   ngOnInit() {
-    if (this.state.getValue().scene !== 'play') {
-      this.router.navigate(['/']);
-    }
+    this.level
+      .getState()
+      .pipe(takeUntil(this.destroyed$))
+      .subscribe((data) => {
+        this.levelData = data;
+        if (data.complete && !this.state.isBusy()) {
+          this.levelComplete = true;
+          timer(2000).subscribe(() => this.router.navigate(['/level']));
+        }
+      });
 
-    this.level.create();
-    this.level.getState().subscribe((data) => (this.levelData = data));
     this.createBoard();
+  }
+
+  ngOnDestroy() {
+    this.sprite.pool.clear();
+    this.destroyed$.next();
+    this.destroyed$.complete();
   }
 
   @HostListener('window:resize')

@@ -15,6 +15,10 @@ import { EffectHorizontalArrowComponent } from '../components/effect-horizontal-
 import { EffectVerticalArrowComponent } from '../components/effect-vertical-arrow/effect-vertical-arrow.component';
 import { EffectAxeComponent } from '../components/effect-axe/effect-axe.component';
 import { MenuComponent } from '../containers/menu/menu.component';
+import { LevelComponent } from '../containers/level/level.component';
+import { MainComponent } from '../containers/main/main.component';
+import { LevelIntroComponent } from '../components/level-intro/level-intro.component';
+import { LevelEndComponent } from '../components/level-end/level-end.component';
 
 @NgModule({
   declarations: [
@@ -31,6 +35,10 @@ import { MenuComponent } from '../containers/menu/menu.component';
     EffectVerticalArrowComponent,
     EffectAxeComponent,
     MenuComponent,
+    LevelComponent,
+    MainComponent,
+    LevelIntroComponent,
+    LevelEndComponent,
   ],
   imports: [CommonModule, PlayRoutingModule, FontAwesomeModule,],
 })

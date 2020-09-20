@@ -11,30 +11,22 @@ import { StateService } from '../../services/state.service';
   styleUrls: ['./menu.component.scss'],
 })
 export class MenuComponent implements OnInit {
-  tileData: Tile;
-
+  tileType: string;
   @ViewChild(TileComponent, { static: true }) tile: TileComponent;
 
   constructor(private router: Router, private state: StateService) {}
 
   ngOnInit(): void {
+    this.state.set({ scene: 'menu' });
     const monsters = Object.keys(Monsters);
-    const type = monsters[Math.floor(Math.random() * 4)];
-    this.tileData = {
-      row: 0,
-      column: 0,
-      width: 70,
-      height: 70,
-      type,
-    } as Tile;
-
+    this.tileType = monsters[Math.floor(Math.random() * 4)];
     timer(1000, 2000).subscribe(() => {
       this.tile.playSelectionAnimation();
     });
   }
 
   onStart() {
-    this.state.set({ scene: 'play' });
-    this.router.navigate(['/play']);
+    this.state.set({ scene: 'level' });
+    this.router.navigate(['/level']);
   }
 }

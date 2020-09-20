@@ -25,7 +25,7 @@ const initialStateFactory = () => ({
 });
 
 export interface State {
-  scene: 'menu' | 'play';
+  scene: 'menu' | 'level' | 'play';
   busy: number;
   selected?: Tile;
 

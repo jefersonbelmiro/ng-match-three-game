@@ -11,6 +11,7 @@ import {
   ChangeDetectionStrategy,
   Component,
   ElementRef,
+  HostBinding,
   Input,
   OnChanges,
 } from '@angular/core';
@@ -34,17 +35,17 @@ const random = (min: number, max: number) => {
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class TileComponent extends SpriteComponent implements Tile, OnChanges {
-  @Input() row: number;
-  @Input() column: number;
   @Input() type: string;
 
-  get x() {
-    return this.column * this.width;
+  @HostBinding('class.absolute') get isAbsolute() {
+    return this.x !== undefined || this.y !== undefined;
   }
 
-  get y() {
-    return this.row * this.height;
-  }
+  @Input() width = 70;
+  @Input() height = 70;
+
+  @Input() row: number;
+  @Input() column: number;
 
   state = TileState.Idle;
   spriteUrl: string;
@@ -60,11 +61,12 @@ export class TileComponent extends SpriteComponent implements Tile, OnChanges {
   }
 
   ngOnChanges() {
-    this.glowUrl = `assets/items-effects/glow/${this.type}.png`;
-    this.spriteUrl = `assets/monsters/${this.type.toLowerCase()}/sprite.png`;
+    this.update();
   }
 
   ngOnInit() {
+    this.update();
+
     this.globalState.getState().subscribe((value) => {
       const element = this.elementRef.nativeElement as HTMLElement;
       element.classList.toggle(
@@ -86,8 +88,17 @@ export class TileComponent extends SpriteComponent implements Tile, OnChanges {
         this.playIdleAnimation();
       }
     });
+  }
+
+  private update() {
     this.glowUrl = `assets/items-effects/glow/${this.type}.png`;
     this.spriteUrl = `assets/monsters/${this.type.toLowerCase()}/sprite.png`;
+    if (this.column !== undefined) {
+      this.x = this.column * this.width;
+    }
+    if (this.row !== undefined) {
+      this.y = this.row * this.height;
+    }
   }
 
   private playIdleAnimation() {
@@ -154,6 +165,7 @@ export class TileComponent extends SpriteComponent implements Tile, OnChanges {
     return this.animate(animations).pipe(
       tap(() => {
         Object.assign(this, { row, column, state: TileState.Idle });
+        this.update();
         this.board.setAt({ row, column }, this);
       })
     );

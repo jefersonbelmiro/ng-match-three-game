@@ -48,4 +48,5 @@ export interface Level {
   }[];
   tiles: number[][];
   types: number[];
+  complete?: boolean;
 }
