@@ -1,29 +1,40 @@
-import { Component, HostListener, OnInit } from '@angular/core';
+import { Component, HostListener, OnInit, OnDestroy } from '@angular/core';
 import { Router } from '@angular/router';
 import { LevelService } from '../../services/level.service';
 import { Level } from '../../shared';
-import { timer } from 'rxjs';
+import { timer, ReplaySubject } from 'rxjs';
+import { takeUntil } from 'rxjs/operators';
 
 @Component({
   selector: 'app-level',
   templateUrl: './level.component.html',
   styleUrls: ['./level.component.scss'],
 })
-export class LevelComponent implements OnInit {
+export class LevelComponent implements OnInit, OnDestroy {
   data: Level;
+  destroyed$ = new ReplaySubject(1);
 
-  constructor(private service: LevelService, private router: Router) {}
+  constructor(private service: LevelService, private router: Router) {
+    this.service.create();
+    this.service
+      .getState()
+      .pipe(takeUntil(this.destroyed$))
+      .subscribe((state) => {
+        this.data = state;
+      });
+  }
 
   ngOnInit(): void {
-    this.service.getState().subscribe((state) => {
-      this.data = state;
-    });
+    timer(4000)
+      .pipe(takeUntil(this.destroyed$))
+      .subscribe(() => {
+        this.play();
+      });
+  }
 
-    this.service.create();
-
-    timer(4000).subscribe(() => {
-      this.play();
-    });
+  ngOnDestroy() {
+    this.destroyed$.next();
+    this.destroyed$.complete();
   }
 
   @HostListener('click')

@@ -89,8 +89,8 @@ export class InputService extends Store<State> {
     this.set({ pointer: null });
   }
 
-  private getPointer(event: MouseEvent | TouchEvent) {
-    if (event instanceof TouchEvent) {
+  private getPointer(event: MouseEvent) {
+    if (window.TouchEvent && event instanceof TouchEvent) {
       return {
         x: event.touches[0].pageX,
         y: event.touches[0].pageY,

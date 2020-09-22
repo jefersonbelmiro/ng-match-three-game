@@ -4,6 +4,7 @@ import {
   OnInit,
   ViewChild,
   ViewContainerRef,
+  OnDestroy,
 } from '@angular/core';
 import { Router } from '@angular/router';
 import { EMPTY, forkJoin, Observable, ReplaySubject, timer } from 'rxjs';
@@ -25,7 +26,7 @@ const BOARD_SIZE = 350;
   templateUrl: './play.component.html',
   styleUrls: ['./play.component.scss'],
 })
-export class PlayComponent implements OnInit {
+export class PlayComponent implements OnInit, OnDestroy {
   width = 400;
   height = 400;
 
@@ -61,7 +62,9 @@ export class PlayComponent implements OnInit {
         this.levelData = data;
         if (data.complete && !this.state.isBusy()) {
           this.levelComplete = true;
-          timer(2000).subscribe(() => this.router.navigate(['/level']));
+          timer(2000)
+            .pipe(takeUntil(this.destroyed$))
+            .subscribe(() => this.router.navigate(['/level']));
         }
       });
 
