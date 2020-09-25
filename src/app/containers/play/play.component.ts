@@ -1,13 +1,12 @@
 import {
   Component,
   HostListener,
+  OnDestroy,
   OnInit,
   ViewChild,
   ViewContainerRef,
-  OnDestroy,
 } from '@angular/core';
-import { Router } from '@angular/router';
-import { EMPTY, forkJoin, Observable, ReplaySubject, timer } from 'rxjs';
+import { EMPTY, forkJoin, Observable, ReplaySubject } from 'rxjs';
 import { finalize, switchMap, takeUntil } from 'rxjs/operators';
 import { EffectScoreComponent } from '../../components/effect-score/effect-score.component';
 import { BoardService } from '../../services/board.service';
@@ -48,8 +47,7 @@ export class PlayComponent implements OnInit, OnDestroy {
     private state: StateService,
     private level: LevelService,
     private sprite: SpriteService,
-    private powerUp: PowerUpService,
-    private router: Router
+    private powerUp: PowerUpService
   ) {
     this.updateSize();
   }
@@ -62,9 +60,6 @@ export class PlayComponent implements OnInit, OnDestroy {
         this.levelData = data;
         if (data.complete && !this.state.isBusy()) {
           this.levelComplete = true;
-          timer(2000)
-            .pipe(takeUntil(this.destroyed$))
-            .subscribe(() => this.router.navigate(['/level']));
         }
       });
 

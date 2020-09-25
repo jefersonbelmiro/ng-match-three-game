@@ -1,3 +1,35 @@
 <div class="content">
-  <div class="current">LEVEL {{ current + 1 }} <br />complete!</div>
+  <div class="current">Level {{ current + 1 }} complete</div>
+
+  <div class="stars">
+    <fa-icon [icon]="icons.starFill"></fa-icon>
+    <fa-icon [icon]="icons.starFill"></fa-icon>
+    <fa-icon [icon]="icons.starFill"></fa-icon>
+    <fa-icon [icon]="icons.star"></fa-icon>
+    <fa-icon [icon]="icons.star"></fa-icon>
+  </div>
+
+  <div class="info">
+    <div class="item">
+      <label>Score:</label>
+      <span>2320</span>
+    </div>
+    <div class="item">
+      <label>Time:</label>
+      <span>1 min 16 sec</span>
+    </div>
+    <div class="item">
+      <label>highest:</label>
+      <span>9890</span>
+    </div>
+  </div>
+
+  <div class="actions">
+    <button (click)="onReplay()" class="btn btn-icon">
+      <fa-icon [icon]="icons.replay"></fa-icon>
+    </button>
+    <button (click)="onNext()" class="btn btn-icon">
+      <fa-icon [icon]="icons.next"></fa-icon>
+    </button>
+  </div>
 </div>
