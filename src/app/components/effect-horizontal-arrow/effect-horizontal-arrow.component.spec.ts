@@ -1,4 +1,4 @@
-import { async, ComponentFixture, TestBed } from '@angular/core/testing';
+import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
 
 import { EffectHorizontalArrowComponent } from './effect-horizontal-arrow.component';
 
@@ -6,7 +6,7 @@ describe('EffectHorizontalArrowComponent', () => {
   let component: EffectHorizontalArrowComponent;
   let fixture: ComponentFixture<EffectHorizontalArrowComponent>;
 
-  beforeEach(async(() => {
+  beforeEach(waitForAsync(() => {
     TestBed.configureTestingModule({
       declarations: [ EffectHorizontalArrowComponent ]
     })

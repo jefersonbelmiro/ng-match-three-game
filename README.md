@@ -3,7 +3,8 @@
 ### [Play the game](https://jefersonbelmiro.github.io/ng-match-three-game/)
 
 ### TODO
-- [ ] update angular(current v9), try HMR)
+- [x] update angular v9 - v11
+- [ ] suport HMR(Hot Module Replacement)
 - [ ] deploy in firebase
 - [ ] level editor(admin)
 - [ ] level sync(client)
@@ -26,7 +27,6 @@
  - `/` MenuComponent: just a screen with play button
  - `/play` PlayComponent: play the game, where the magic happens
  - `/level` LevelComponent: switching levels
-
 
 ### Containers
 

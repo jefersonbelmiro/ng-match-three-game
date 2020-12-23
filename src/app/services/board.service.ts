@@ -1,6 +1,5 @@
-import { Injectable, ComponentRef } from '@angular/core';
-import { Board, getTileSize, Monsters, Position, Tile, Level } from '../shared';
-import { TileService } from './tile.service';
+import { ComponentRef, Injectable } from '@angular/core';
+import { Board, getTileSize, Level, Monsters, Position, Tile } from '../shared';
 
 const monsters = Object.keys(Monsters);
 
@@ -59,7 +58,9 @@ export class BoardService {
 
   crateAt(position: Position, type?: string) {
     if (!type) {
-      const typeIndex = this.types[Math.floor(Math.random() * this.types.length)];
+      const typeIndex = this.types[
+        Math.floor(Math.random() * this.types.length)
+      ];
       type = monsters[typeIndex];
     }
     const ref = this.createTile(this, position, type);
