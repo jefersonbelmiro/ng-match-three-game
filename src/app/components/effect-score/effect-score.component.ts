@@ -1,18 +1,14 @@
-import { Component, Input, HostBinding } from '@angular/core';
-import { SpriteComponent } from '../sprite/sprite.component';
 import {
-  trigger,
-  transition,
-  style,
   animate,
-  state,
-  keyframes,
-  animation,
-  useAnimation,
   group,
+  keyframes,
+  style,
+  useAnimation,
 } from '@angular/animations';
-import { Sprite } from '../../shared/sprite';
+import { Component, Input } from '@angular/core';
 import { targetAnimationFactory } from '../../shared/animations';
+import { Sprite } from '../../shared/sprite';
+import { SpriteComponent } from '../sprite/sprite.component';
 
 @Component({
   selector: 'app-effect-score',

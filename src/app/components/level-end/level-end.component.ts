@@ -1,8 +1,25 @@
-import { animate, group, query, style, transition, trigger } from '@angular/animations';
-import { Component, HostBinding, Input, OnDestroy, OnInit } from '@angular/core';
+import {
+  animate,
+  group,
+  query,
+  style,
+  transition,
+  trigger,
+} from '@angular/animations';
+import {
+  Component,
+  HostBinding,
+  Input,
+  OnDestroy,
+  OnInit,
+} from '@angular/core';
 import { Router } from '@angular/router';
-import { faRedoAlt, faStepForward, faStar as faStarFill } from '@fortawesome/free-solid-svg-icons';
 import { faStar } from '@fortawesome/free-regular-svg-icons';
+import {
+  faRedoAlt,
+  faStar as faStarFill,
+  faStepForward,
+} from '@fortawesome/free-solid-svg-icons';
 import { ReplaySubject } from 'rxjs';
 import { LevelService } from '../../services/level.service';
 
@@ -44,8 +61,7 @@ export class LevelEndComponent implements OnInit, OnDestroy {
 
   constructor(private router: Router, private level: LevelService) {}
 
-  ngOnInit(): void {
-  }
+  ngOnInit(): void {}
 
   ngOnDestroy() {
     this.destroyed$.next();
@@ -58,6 +74,9 @@ export class LevelEndComponent implements OnInit, OnDestroy {
   }
 
   onNext() {
+    // increment current level
+    this.level.setNext();
+
     this.router.navigate(['/level']);
   }
 }
