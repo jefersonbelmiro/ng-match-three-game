@@ -9,7 +9,7 @@
     ]
   },
   "hosting": {
-    "public": "dist",
+    "public": "dist/ng-match-three-game/browser",
     "ignore": [
       "firebase.json",
       "**/.*",

@@ -9,7 +9,9 @@
     "test": "ng test",
     "lint": "ng lint",
     "e2e": "ng e2e",
-    "deploy": "ng run ng-match-three-game:app-shell:production && ng deploy --no-build --no-silent"
+    "deploy:ghpages": "npm run config -- --environment=prod && ng run ng-match-three-game:app-shell:production && ng deploy --no-build --no-silent",
+    "deploy:firebase": "npm run config -- --environment=prod && ng run ng-match-three-game:app-shell:production && firebase deploy",
+    "deploy": "npm run deploy:firebase"
   },
   "private": true,
   "dependencies": {

@@ -47,8 +47,8 @@
               "extractLicenses": true,
               "vendorChunk": false,
               "buildOptimizer": true,
-              "deployUrl": "/ng-match-three-game/",
-              "baseHref": "/ng-match-three-game/",
+              "deployUrl": "/",
+              "baseHref": "/",
               "budgets": [
                 {
                   "type": "initial",

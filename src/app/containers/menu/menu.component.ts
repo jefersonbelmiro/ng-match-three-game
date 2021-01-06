@@ -7,6 +7,10 @@ import { StateService } from '../../services/state.service';
 import { AuthService } from '../../services/auth.service';
 import { AngularFireDatabase } from '@angular/fire/database';
 
+import * as firebase from 'firebase';
+// import firebase from 'firebase/app'
+// import * as firebase from 'firebase';
+
 @Component({
   selector: 'app-menu',
   templateUrl: './menu.component.html',
@@ -16,13 +20,14 @@ export class MenuComponent implements OnInit {
   tileType: string;
   @ViewChild(TileComponent, { static: true }) tile: TileComponent;
 
-  constructor(private router: Router, private state: StateService, private db: AngularFireDatabase, private auth: AuthService) {}
+  constructor(
+    private router: Router,
+    private state: StateService,
+    private db: AngularFireDatabase,
+    private auth: AuthService
+  ) {}
 
   ngOnInit(): void {
-
-    console.log('init');
-    this.auth.loginAnonymously();
-
     this.state.set({ scene: 'menu' });
     const monsters = Object.keys(Monsters);
     this.tileType = monsters[Math.floor(Math.random() * 4)];
@@ -32,10 +37,22 @@ export class MenuComponent implements OnInit {
   }
 
   onStart() {
+    this.state.set({ scene: 'level' });
+    this.router.navigate(['/level']);
+  }
 
-    console.log("try write");
-    this.db.list("test-write").push("test-value-2");
-
+  onMatch() {
+    // this.auth.loginAnonymously().then((response) => {
+    //   const refPlayerState = this.db.database.ref(
+    //     `/player_states/${response.user.uid}`
+    //   );
+    //   const refCommands = this.db.database.ref(
+    //     `/commands/${response.user.uid}`
+    //   );
+    //   refCommands.push('match');
+    //
+    //   this.db.list('test-write').push('test-value');
+    // });
 
     // this.state.set({ scene: 'level' });
     // this.router.navigate(['/level']);

@@ -1,6 +1,8 @@
 # NgMatchThreeGame
 
-### [Play the game](https://jefersonbelmiro.github.io/ng-match-three-game/)
+### Play the game
+ - [github page](https://jefersonbelmiro.github.io/ng-match-three-game/)
+ - [firebase hosting](https://ng-match-three-game-37663.web.app)
 
 ### TODO
 - [x] update angular v9 - v11

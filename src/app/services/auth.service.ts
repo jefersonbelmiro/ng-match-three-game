@@ -52,9 +52,10 @@ export class AuthService {
     });
   }
 
-  loginAnonymously() {
-    this.afAuth.signInAnonymously().then(response => {
+  async loginAnonymously() {
+    return this.afAuth.signInAnonymously().then(response => {
       console.log('response', response);
+      return response;
     })
   }
 
