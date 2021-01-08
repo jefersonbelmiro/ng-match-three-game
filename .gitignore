@@ -4,6 +4,8 @@
 /*debug.log
 .firebase
 
+src/environments/dotenv.ts
+
 # compiled output
 /dist
 /tmp

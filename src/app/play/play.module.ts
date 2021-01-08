@@ -26,8 +26,6 @@ import { AngularFirestoreModule } from '@angular/fire/firestore';
 import { environment } from '../../environments/environment';
 import { LobbyComponent } from '../containers/lobby/lobby.component';
 
-console.log('play module', environment);
-
 const firebaseConfig = {
   apiKey: environment.FIREBASE_API_KEY,
   authDomain: environment.FIREBASE_AUTH_DOMAIN,
