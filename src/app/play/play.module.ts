@@ -20,6 +20,25 @@ import { MainComponent } from '../containers/main/main.component';
 import { LevelIntroComponent } from '../components/level-intro/level-intro.component';
 import { LevelEndComponent } from '../components/level-end/level-end.component';
 
+import { AngularFireModule } from '@angular/fire';
+import { AngularFireAuthModule } from '@angular/fire/auth';
+import { AngularFirestoreModule } from '@angular/fire/firestore';
+import { environment } from '../../environments/environment';
+import { LobbyComponent } from '../containers/lobby/lobby.component';
+
+console.log('play module', environment);
+
+const firebaseConfig = {
+  apiKey: environment.FIREBASE_API_KEY,
+  authDomain: environment.FIREBASE_AUTH_DOMAIN,
+  databaseURL: environment.FIREBASE_DATABASE_URL,
+  projectId: environment.FIREBASE_PROJECT_ID,
+  storageBucket: environment.FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: environment.FIREBASE_MESSAGING_SENDER_ID,
+  appId: environment.FIREBASE_APP_ID,
+  measurementId: environment.FIREBASE_MEASUREMENT_ID,
+};
+
 @NgModule({
   declarations: [
     BoardComponent,
@@ -39,7 +58,15 @@ import { LevelEndComponent } from '../components/level-end/level-end.component';
     MainComponent,
     LevelIntroComponent,
     LevelEndComponent,
+    LobbyComponent,
   ],
-  imports: [CommonModule, PlayRoutingModule, FontAwesomeModule,],
+  imports: [
+    CommonModule,
+    PlayRoutingModule,
+    FontAwesomeModule,
+    AngularFireModule.initializeApp(firebaseConfig),
+    AngularFireAuthModule,
+    AngularFirestoreModule,
+  ],
 })
 export class PlayModule {}

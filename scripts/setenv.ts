@@ -3,34 +3,26 @@ const { argv } = require('yargs');
 
 require('dotenv').config();
 
-const environment = argv.environment;
-const isProduction = environment === 'prod';
-const targetPath = isProduction
-   ? `./src/environments/environment.prod.ts`
-   : `./src/environments/environment.ts`;
+const targetPath = `./src/environments/dotenv.ts`;
 
-// @TODO - get current json and append env
-const environmentFileContent = `
-export const environment = {
-   production: ${isProduction},
-   ${getEnvKeys()}
-};
-`;
+const environmentFileContent = `export default ${getEnvKeys()};`;
 
 writeFile(targetPath, environmentFileContent, function (err) {
-   if (err) {
-      console.log(err);
-   }
-   console.log(`Wrote variables to ${targetPath}`);
+  if (err) {
+    console.log(err);
+  }
+  console.log(`Wrote variables to ${targetPath}`);
 });
 
 function getEnvKeys() {
-  return readFileSync('.env.example', 'utf-8')
+  const data = readFileSync('.env.example', 'utf-8')
     .split(/\r?\n/)
-    .map(line => {
+    .map((line) => {
       return line.trim().replace('=', '');
     })
-    .filter(item => item)
-    .map(key => `${key}: "${process.env[key]}"`)
-    .join(",\n  ");
+    .filter((item) => item)
+    .map((key) => `"${key}": "${process.env[key]}"`)
+    .join(',');
+  const json = `{${data}}`;
+  return JSON.stringify(JSON.parse(json), null, 2);
 }
