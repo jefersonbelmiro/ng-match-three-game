@@ -11,7 +11,9 @@
     "e2e": "ng e2e",
     "deploy:ghpages": "npm run config -- --environment=prod && ng run ng-match-three-game:app-shell:production && ng deploy --no-build --no-silent",
     "deploy:firebase": "npm run config -- --environment=prod && ng run ng-match-three-game:app-shell:production && firebase deploy",
-    "deploy": "npm run deploy:firebase"
+    "deploy": "npm run deploy:firebase",
+    "assume-unchanged": "git update-index --assume-unchanged src/environments/dotenv.ts",
+    "postinstall": "npm run assume-unchanged"
   },
   "private": true,
   "dependencies": {
@@ -19,7 +21,7 @@
     "@angular/common": "~11.0.5",
     "@angular/compiler": "~11.0.5",
     "@angular/core": "~11.0.5",
-    "@angular/fire": "^6.0.3",
+    "@angular/fire": "^6.1.4",
     "@angular/forms": "~11.0.5",
     "@angular/platform-browser": "~11.0.5",
     "@angular/platform-browser-dynamic": "~11.0.5",
@@ -30,7 +32,7 @@
     "@fortawesome/free-brands-svg-icons": "^5.13.0",
     "@fortawesome/free-regular-svg-icons": "^5.13.0",
     "@fortawesome/free-solid-svg-icons": "^5.13.0",
-    "firebase": "^7.22.0",
+    "firebase": "^8.2.2",
     "rxjs": "~6.5.4",
     "tslib": "^2.0.0",
     "web-animations-js": "^2.3.2",

@@ -1,21 +1,18 @@
 import { Injectable, NgZone } from '@angular/core';
 import { Router } from '@angular/router';
-import {
-  AngularFirestore,
-  AngularFirestoreDocument,
-} from '@angular/fire/firestore';
-import { auth } from 'firebase/app';
+import { AngularFirestore } from '@angular/fire/firestore';
 import { AngularFireAuth } from '@angular/fire/auth';
 
 // import { firebase } from '@firebase/app'
 import firebase from 'firebase/app';
-import 'firebase/auth';
+// import 'firebase/auth';
 
 // import * as firebase from 'firebase';
 // import 'firebase/auth'
 // import firebase from 'firebase/app'
 
-import { User } from 'firebase';
+import { from, of, ReplaySubject, Subject } from 'rxjs';
+import { map, switchMap, take } from 'rxjs/operators';
 
 export interface IUser {
   uid: string;
@@ -25,11 +22,13 @@ export interface IUser {
   emailVerified: boolean;
 }
 
-@Injectable({
-  providedIn: 'root',
-})
+@Injectable()
 export class AuthService {
   userData: any; // Save logged in user data
+
+  userDataChange = new Subject<firebase.User>();
+  userDataSubject = new ReplaySubject<firebase.User>(1);
+  userDataObservable = this.userDataSubject.asObservable();
 
   constructor(
     public afs: AngularFirestore, // Inject Firestore service
@@ -37,82 +36,73 @@ export class AuthService {
     public router: Router,
     public ngZone: NgZone // NgZone service to remove outside scope warning
   ) {
-    /* Saving user data in localstorage when
-    logged in and setting up null when logged out */
     this.afAuth.authState.subscribe((user) => {
-      console.log('auth subscribe', user);
+      console.log('auth subscribe', { user });
       if (user) {
-        this.userData = user;
-        localStorage.setItem('user', JSON.stringify(this.userData));
-        JSON.parse(localStorage.getItem('user'));
+        let storageUser: any;
+        try {
+          storageUser = JSON.parse(localStorage.getItem('user'));
+        } catch (er) {
+          storageUser = {};
+        }
+        if (storageUser && storageUser.uid === user.uid) {
+          user = storageUser;
+        }
+        localStorage.setItem('user', JSON.stringify(user));
       } else {
         localStorage.setItem('user', null);
         JSON.parse(localStorage.getItem('user'));
       }
+      this.userData = user;
+      this.userDataSubject.next(user);
+      this.userDataChange.next(user);
     });
   }
 
-  async loginAnonymously() {
-    return this.afAuth.signInAnonymously().then(response => {
-      console.log('response', response);
-      return response;
-    })
+  loginAnonymously() {
+    return this.userDataObservable.pipe(
+      take(1),
+      switchMap((user) => {
+        const hash = Math.floor(Math.random() * 90000) + 10000;
+        const displayName = `player-${hash}`;
+        console.log('userData', { user, displayName });
+        if (user) {
+          return of(user);
+        }
+        return from(this.afAuth.signInAnonymously());
+      }),
+      switchMap(() => {
+        return this.userDataChange.pipe(take(1));
+      })
+    );
   }
 
-  async loginWithGoogle() {
-    const provider = new firebase.auth.GoogleAuthProvider()
-    // const provider = new  auth.GoogleAuthProvider();
-    return this.afAuth.signInWithRedirect(provider).then(response => {
-      console.log('response', response);
-    });
+  loginWithGoogle() {
+    return this.userDataObservable.pipe(
+      take(1),
+      switchMap((user) => {
+        console.log('userData', { user });
+        if (user) {
+          return of(user);
+        }
+        const provider = new firebase.auth.GoogleAuthProvider();
+        provider.addScope('profile');
+        return from(this.afAuth.signInWithRedirect(provider));
+      }),
+      map(() => {
+        console.log('login google');
+        return this.userData;
+      })
+    );
     // return this.afAuth.signInWithPopup(provider).then(response => {
     //   console.log('response', response);
     // });
   }
 
-  // Sign in with Google
-  GoogleAuth() {
-    return this.AuthLogin(new auth.GoogleAuthProvider());
-  }
-
-  // Auth logic to run auth providers
-  async AuthLogin(provider: auth.AuthProvider) {
-    return this.afAuth.signInWithPopup(provider)
-      .then((result) => {
-        this.ngZone.run(() => {
-          this.router.navigate(['dashboard']);
-        });
-        this.SetUserData(result.user);
-      })
-      .catch((error) => {
-        window.alert(error);
-      });
-  }
-
-  /* Setting up user data when sign in with username/password,
-  sign up with username/password and sign in with social auth
-  provider in Firestore database using AngularFirestore + AngularFirestoreDocument service */
-  SetUserData(user: User) {
-    const userRef: AngularFirestoreDocument<any> = this.afs.doc(
-      `users/${user.uid}`
-    );
-    const userData = {
-      uid: user.uid,
-      email: user.email,
-      displayName: user.displayName,
-      photoURL: user.photoURL,
-      emailVerified: user.emailVerified,
-    };
-    return userRef.set(userData, {
-      merge: true,
-    });
-  }
-
-  // Sign out
-  async SignOut() {
-    return this.afAuth.signOut().then(() => {
+  signOut() {
+    this.afAuth.signOut().then(() => {
       localStorage.removeItem('user');
-      this.router.navigate(['sign-in']);
+      this.router.navigate(['/']);
     });
   }
 }

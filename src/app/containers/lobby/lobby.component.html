@@ -1,9 +1,39 @@
 <div class="content">
-  <div>Find opponent...</div>
-  <div class="action">
-    <button (click)="onReady()" class="btn">Ready</button>
-    <button (click)="onCancel()" class="btn">Canceal</button>
-  </div>
+  <div *ngIf="loading">loading...</div>
+
+  <ng-container *ngIf="!loading">
+    <ng-container *ngIf="userData && !match">
+      <ng-container *ngIf="matching; else showFind">
+        <div>Find opponent...</div>
+        <div class="action">
+          <button (click)="onCancel()" class="btn">Canceal</button>
+          <button (click)="onLogout()" class="btn">Logout</button>
+        </div>
+      </ng-container>
+      <ng-template #showFind>
+        <div class="action">
+          <button (click)="onFindOpponent()" class="btn">Find opponent</button>
+          <button (click)="onLogout()" class="btn">Logout</button>
+        </div>
+      </ng-template>
+    </ng-container>
+
+    <ng-container *ngIf="match">
+      <div>opponent found, are you ready?</div>
+      <div class="action">
+        <button (click)="onReady()" class="btn">Ready</button>
+        <button (click)="onCancel()" class="btn">Canceal</button>
+        <button (click)="onLogout()" class="btn">Logout</button>
+      </div>
+    </ng-container>
+
+    <div class="action" *ngIf="!userData">
+      <button (click)="onLoginWithGoogle()" class="btn">
+        Login with google
+      </button>
+      <button (click)="onLoginAnonymous()" class="btn">Login anonymous</button>
+    </div>
+  </ng-container>
 </div>
 
 <app-play-background></app-play-background>

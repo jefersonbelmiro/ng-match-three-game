@@ -2,7 +2,6 @@ import { Injectable } from '@angular/core';
 import { map } from 'rxjs/operators';
 import { Level, Monsters } from '../shared';
 import { StateService } from './state.service';
-import { AngularFirestore } from '@angular/fire/firestore';
 
 const LEVEL_DATA = [
   {
@@ -93,7 +92,7 @@ const monsters = Object.keys(Monsters);
   providedIn: 'root',
 })
 export class LevelService {
-  constructor(private state: StateService, private firestore: AngularFirestore) {}
+  constructor(private state: StateService) {}
 
   create() {
     let current = this.getValue()?.current || 0;
@@ -165,9 +164,5 @@ export class LevelService {
   setNext() {
     const current = this.getValue().current + 1;
     this.set({ current });
-  }
-
-  syncServer() {
-    // this.firestore.doc('score').update(student);
   }
 }
