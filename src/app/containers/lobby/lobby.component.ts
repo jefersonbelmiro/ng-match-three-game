@@ -1,12 +1,16 @@
-import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, NgZone, OnInit } from '@angular/core';
 import { AngularFireDatabase } from '@angular/fire/database';
 import { DatabaseReference } from '@angular/fire/database/interfaces';
-import { finalize, take } from 'rxjs/operators';
+import { finalize, take, takeUntil } from 'rxjs/operators';
 // import * as firebase from 'firebase';
 // import * as firebase from 'firebase/app';
 // import 'firebase/functions';
 import { AuthService } from '../../services/auth.service';
 import firebase from 'firebase/app';
+import { StateService } from '../../services/state.service';
+import { MultiplayerData } from '../../shared';
+import { Router } from '@angular/router';
+import { ReplaySubject } from 'rxjs';
 
 @Component({
   selector: 'app-lobby',
@@ -18,15 +22,22 @@ export class LobbyComponent implements OnInit {
   loading = false;
   match = false;
   matching = false;
+  ready = false;
+
+  multiplayerData: MultiplayerData;
 
   refGameState: DatabaseReference;
   refPlayerState: DatabaseReference;
   refCommands: DatabaseReference;
 
+  destroyed$ = new ReplaySubject(1);
   constructor(
     private firebase: AngularFireDatabase,
     private auth: AuthService,
-    private cd: ChangeDetectorRef
+    private cd: ChangeDetectorRef,
+    private state: StateService,
+    private router: Router,
+    private ngZone: NgZone
   ) {}
 
   ngOnInit(): void {
@@ -45,10 +56,25 @@ export class LobbyComponent implements OnInit {
           this.onLogin(user);
         }
       });
+
+    this.state
+      .getState()
+      .pipe(takeUntil(this.destroyed$))
+      .subscribe(({ multiplayer }) => {
+        this.multiplayerData = multiplayer;
+        this.cd.detectChanges();
+        if (multiplayer?.player?.ready && multiplayer?.oponent?.ready) {
+          this.ngZone.run(() => this.router.navigate(['/multiplayer']));
+        }
+      });
   }
 
   ngOnDestroy() {
-    this.removeCommands();
+    this.destroyed$.next();
+    this.destroyed$.complete();
+    if (this.matching) {
+      this.removeCommands();
+    }
     this.removeListeners();
   }
 
@@ -82,19 +108,24 @@ export class LobbyComponent implements OnInit {
 
   async onFindOpponent() {
     console.log('find opponent');
-    // empty object to be truthy in template
     this.matching = true;
-    await this.refCommands.push('match');
+    await this.refCommands.push({ command: 'match' });
   }
 
   onReady() {
-    console.log('ready');
+    this.ready = true;
+    const uid = this.userData.uid;
+    const gameId = this.multiplayerData.gameId;
+    this.refCommands.push({ command: 'ready', gameId });
+    console.log('ready', { uid, gameId });
   }
 
   onCancel() {
     console.log('cancel');
     this.match = false;
     this.matching = false;
+    this.ready = false;
+    this.cd.detectChanges();
     this.removeCommands();
   }
 
@@ -102,21 +133,23 @@ export class LobbyComponent implements OnInit {
     console.log('logout');
     this.removeCommands();
     this.removeListeners();
-    this.auth.signOut();
+    this.auth.signOut().subscribe(() => {
+      this.userData = null;
+    });
   }
 
   onPlayerStateChanges = (snapshot: firebase.database.DataSnapshot) => {
     const state = snapshot.val();
     console.log('onPlayerStateChanges', state);
-    this.matching = state?.matching;
     if (!state) {
       return;
     }
 
+    this.matching = state?.matching;
     if (state?.gameId) {
       this.match = true;
       this.refGameState = this.firebase.database.ref(`/games/${state.gameId}`);
-      this.refGameState.on("value", this.onGameStateChanges);
+      this.refGameState.on('value', this.onGameStateChanges);
     }
 
     this.cd.detectChanges();
@@ -124,14 +157,31 @@ export class LobbyComponent implements OnInit {
 
   onGameStateChanges = (snapshot: firebase.database.DataSnapshot) => {
     const state = snapshot.val();
+    console.log('onGameStateChanges', state, {
+      matching: this.matching,
+      match: this.match,
+    });
     // remove removed
     if (!state) {
       // when match is because other play leave lobby, continue to find
       this.matching = this.match;
       this.match = false;
       this.cd.detectChanges();
+      return;
     }
-    console.log('onGameStateChanges', state);
+
+    const player = state.players.find(
+      (item: { uid: string }) => item.uid === this.userData.uid
+    );
+    const oponent = state.players.find(
+      (item: { uid: string }) => item.uid !== this.userData.uid
+    );
+    const data: MultiplayerData = {
+      gameId: state.gameId,
+      oponent,
+      player,
+    };
+    this.state.set({ multiplayer: data });
   };
 
   private removeListeners() {
@@ -147,7 +197,7 @@ export class LobbyComponent implements OnInit {
   }
 
   private async removeCommands() {
-    const uid = this.userData.uid;
+    const uid = this.userData?.uid;
     if (uid) {
       await this.firebase.database.ref(`/commands/${uid}`).remove();
     }

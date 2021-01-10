@@ -1,5 +1,4 @@
-import { Injectable, NgZone } from '@angular/core';
-import { Router } from '@angular/router';
+import { Injectable } from '@angular/core';
 import { AngularFirestore } from '@angular/fire/firestore';
 import { AngularFireAuth } from '@angular/fire/auth';
 
@@ -32,40 +31,36 @@ export class AuthService {
 
   constructor(
     public afs: AngularFirestore, // Inject Firestore service
-    public afAuth: AngularFireAuth, // Inject Firebase auth service
-    public router: Router,
-    public ngZone: NgZone // NgZone service to remove outside scope warning
+    public afAuth: AngularFireAuth // Inject Firebase auth service
   ) {
     this.afAuth.authState.subscribe((user) => {
-      console.log('auth subscribe', { user });
-      if (user) {
-        let storageUser: any;
-        try {
-          storageUser = JSON.parse(localStorage.getItem('user'));
-        } catch (er) {
-          storageUser = {};
-        }
-        if (storageUser && storageUser.uid === user.uid) {
-          user = storageUser;
-        }
-        localStorage.setItem('user', JSON.stringify(user));
-      } else {
-        localStorage.setItem('user', null);
-        JSON.parse(localStorage.getItem('user'));
-      }
+      console.log('auth subscribe', user?.displayName, { user });
       this.userData = user;
       this.userDataSubject.next(user);
       this.userDataChange.next(user);
     });
   }
 
+  updateProfile(profile?: {
+    displayName?: string | null;
+    photoURL?: string | null;
+  }) {
+    const user = this.userData;
+    if (!user) {
+      return Promise.reject('Empty user');
+    }
+    if (!profile?.displayName) {
+      const hash = Math.floor(Math.random() * 90000) + 10000;
+      profile = { ...profile, displayName: `player-${hash}` };
+    }
+    return user.updateProfile(profile);
+  }
+
   loginAnonymously() {
     return this.userDataObservable.pipe(
       take(1),
       switchMap((user) => {
-        const hash = Math.floor(Math.random() * 90000) + 10000;
-        const displayName = `player-${hash}`;
-        console.log('userData', { user, displayName });
+        console.log('userData', { user });
         if (user) {
           return of(user);
         }
@@ -100,9 +95,6 @@ export class AuthService {
   }
 
   signOut() {
-    this.afAuth.signOut().then(() => {
-      localStorage.removeItem('user');
-      this.router.navigate(['/']);
-    });
+    return from(this.afAuth.signOut());
   }
 }

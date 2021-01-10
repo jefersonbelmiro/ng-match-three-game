@@ -5,6 +5,7 @@ import { MenuComponent } from '../containers/menu/menu.component';
 import { LevelComponent } from '../containers/level/level.component';
 import { MainComponent } from '../containers/main/main.component';
 import { LobbyComponent } from '../containers/lobby/lobby.component';
+import { MultiplayerComponent } from '../containers/multiplayer/multiplayer.component';
 
 const routes: Routes = [
   {
@@ -26,6 +27,10 @@ const routes: Routes = [
       {
         path: 'lobby',
         component: LobbyComponent,
+      },
+      {
+        path: 'multiplayer',
+        component: MultiplayerComponent,
       },
     ],
   },

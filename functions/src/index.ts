@@ -3,19 +3,6 @@ import * as functions from 'firebase-functions';
 
 const TYPES_INDEX = [0, 1, 2, 3];
 
-export enum TileState {
-  Idle = 'idle',
-  Shift = 'shift',
-  Dead = 'dead',
-}
-
-interface Tile {
-  row: number;
-  column: number;
-  type: number;
-  state: TileState;
-}
-
 // // Start writing Firebase Functions
 // // https://firebase.google.com/docs/functions/typescript
 //
@@ -31,30 +18,36 @@ export const OnWriteCommand = functions.database
     const cmd_id = context.params.cmd_id;
     const root = change.after.ref.root;
 
-    console.log('command', { uid, cmd_id });
-    functions.logger.info('command', { uid, cmd_id });
-
     // Exit when the data is deleted.
     if (!change.after.exists()) {
-      console.log(`command was deleted ${cmd_id}`);
+      const value = change.before.val();
+      console.log(`command was deleted ${cmd_id}`, value);
       // remove player state
-      if (change.before.val() === 'match') {
+      if (value?.command === 'match') {
         return cleanPlayerState(uid, root);
       }
       return null;
     }
 
-    const command = change.after.val();
+    const value = change.after.val();
+    const command = value.command;
+
+    console.log('command', { uid, cmd_id, command_value: value });
+    functions.logger.info('command', { uid, cmd_id, command_value: value });
 
     switch (command) {
       case 'match':
-        return match(uid, root);
+        return onMatch(uid, root);
+      case 'ready':
+        return onReady(uid, value, root);
+      case 'move':
+        return onMove(uid, value, root);
     }
 
     return null;
   });
 
-async function match(uid: string, root: admin.database.Reference) {
+async function onMatch(uid: string, root: admin.database.Reference) {
   await root.child(`players_states/${uid}`).set({ matching: true });
 
   const players =
@@ -77,6 +70,62 @@ async function match(uid: string, root: admin.database.Reference) {
   return null;
 }
 
+async function onReady(
+  uid: string,
+  { gameId }: { gameId: string },
+  root: admin.database.Reference
+) {
+  return root.child(`/games/${gameId}`).transaction((state) => {
+    if (!state) {
+      return null;
+    }
+
+    const player = state.players.find((player: { uid: string }) => {
+      return player.uid === uid;
+    });
+    player.ready = true;
+
+    const notReady = state.players.some((player: { ready: boolean }) => {
+      return !player.ready;
+    });
+    if (!notReady) {
+      state.board = createBoard();
+    }
+    return state;
+  });
+}
+
+interface MovePayload {
+  gameId: string;
+  source: {
+    row: number;
+    column: number;
+  };
+  target: {
+    row: number;
+    column: number;
+  };
+}
+async function onMove(
+  uid: string,
+  payload: MovePayload,
+  root: admin.database.Reference
+) {
+  const gameId = payload.gameId;
+  return root.child(`/games/${gameId}`).transaction((state) => {
+    if (!state) {
+      return null;
+    }
+
+    const updates = state.updates || [];
+    const { source, target } = payload;
+    updates.push({ type: 'shift', source, target });
+
+    state.updates = updates;
+    return state;
+  });
+}
+
 async function cleanPlayerState(uid: string, root: admin.database.Reference) {
   const state = (
     await root.child(`/players_states/${uid}`).once('value')
@@ -87,10 +136,12 @@ async function cleanPlayerState(uid: string, root: admin.database.Reference) {
     const game = (
       await root.child(`/games/${state.gameId}`).once('value')
     ).val();
-    const oponentID = game.players.find((id: string) => id !== uid);
+    const oponent = game.players.find(
+      (player: { uid: string }) => player.uid !== uid
+    );
     updates.push(
       root
-        .child(`/players_states/${oponentID}`)
+        .child(`/players_states/${oponent.uid}`)
         .set({ matching: true, updated: true })
     );
     updates.push(root.child(`/games/${state.gameId}`).remove());
@@ -99,15 +150,24 @@ async function cleanPlayerState(uid: string, root: admin.database.Reference) {
   return Promise.all(updates);
 }
 
-async function createGame(players: string[], root: admin.database.Reference) {
-  const board = createBoard();
-  const gameRef = await root.child('/games').push({ players, board });
+async function createGame(
+  playersIds: string[],
+  root: admin.database.Reference
+) {
+  const players = playersIds.map((uid) => {
+    return {
+      uid,
+      ready: false,
+      life: 2000,
+    };
+  });
+  const gameRef = await root.child('/games').push();
   const gameId = gameRef.key;
+  await gameRef.set({ players, gameId });
 
-  console.log('createGame', players);
-  console.log('gameRef', gameRef.key, board);
+  console.log('createGame', gameId, players);
 
-  const updates = players.map((uid, index) => {
+  const updates = playersIds.map((uid, index) => {
     const opponent = index === 0 ? players[1] : players[0];
     return root.child(`/players_states/${uid}`).set({ gameId, opponent });
   });
@@ -120,12 +180,11 @@ function getRandomType() {
 }
 
 function createBoard() {
-  const data: Tile[][] = [];
+  const data: number[][] = [];
   for (let row = 0; row < 5; row++) {
     data[row] = [];
     for (let column = 0; column < 5; column++) {
-      const type = getRandomType();
-      data[row][column] = { row, column, type, state: TileState.Idle };
+      data[row][column] = getRandomType();
     }
   }
   return data;

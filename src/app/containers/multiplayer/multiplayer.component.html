@@ -1,0 +1,16 @@
+<div class="content">
+  <app-board
+    [width]="boardData.width"
+    [height]="boardData.height"
+    [rows]="boardData.rows"
+    [columns]="boardData.columns"
+    (swap)="onSwap($event)"
+    (select)="onSelect($event)"
+  >
+    <ng-container #container></ng-container>
+  </app-board>
+
+  <app-power-ups></app-power-ups>
+</div>
+
+<app-play-background></app-play-background>

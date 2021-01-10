@@ -22,7 +22,7 @@ export class BoardService {
 
   constructor() {}
 
-  create(board: Board, levelData: Level, { createTile, destroyTile }) {
+  createFromLevel(board: Board, levelData: Level, { createTile, destroyTile }) {
     this.data = [];
     this.rows = board.rows;
     this.columns = board.columns;
@@ -37,7 +37,25 @@ export class BoardService {
       this.data[row] = [];
       for (let column = 0; column < typeIndex[row].length; column++) {
         const index = typeIndex[row][column];
-        this.crateAt({ row, column }, monsters[index]);
+        this.createAt({ row, column }, monsters[index]);
+      }
+    }
+  }
+
+  createFromServer(board: Board, data: number[][], { createTile, destroyTile }) {
+    this.data = [];
+    this.rows = board.rows;
+    this.columns = board.columns;
+    this.width = board.width;
+    this.height = board.height;
+    this.createTile = createTile;
+    this.destroyTile = destroyTile;
+
+    for (let row = 0; row < data.length; row++) {
+      this.data[row] = [];
+      for (let column = 0; column < data[row].length; column++) {
+        const index = data[row][column];
+        this.createAt({ row, column }, monsters[index]);
       }
     }
   }
@@ -56,7 +74,7 @@ export class BoardService {
     }
   }
 
-  crateAt(position: Position, type?: string) {
+  createAt(position: Position, type?: string) {
     if (!type) {
       const typeIndex = this.types[
         Math.floor(Math.random() * this.types.length)

@@ -108,7 +108,7 @@ export class PlayComponent implements OnInit, OnDestroy {
     const createTile = this.tileBuilder.createFactory();
     const destroyTile = this.tileBuilder.destroyFactory();
 
-    this.board.create(this.boardData, this.levelData, {
+    this.board.createFromLevel(this.boardData, this.levelData, {
       createTile,
       destroyTile,
     });
@@ -230,7 +230,7 @@ export class PlayComponent implements OnInit, OnDestroy {
         }
       }
       shiftData.forEach(({ row, column }) => {
-        const tile = this.board.crateAt({ row: row - shift, column });
+        const tile = this.board.createAt({ row: row - shift, column });
         const stream$ = tile.shift({ row, column });
         data$.push(stream$);
       });

@@ -6,6 +6,8 @@
     "config": "ts-node ./scripts/setenv.ts",
     "start": "npm run config -- --environment=dev && ng serve",
     "build": "npm run config -- --environment=prod && ng build",
+    "start:emulators": ". $HOME/.nvm/nvm.sh && nvm use v12.20.1 && firebase emulators:start",
+    "start:functions": "cd functions && npm run watch",
     "test": "ng test",
     "lint": "ng lint",
     "e2e": "ng e2e",

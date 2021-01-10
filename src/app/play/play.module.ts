@@ -27,6 +27,7 @@ import { AuthService } from '../services/auth.service';
 
 import { USE_EMULATOR as USE_DATABASE_EMULATOR } from '@angular/fire/database';
 import { AngularFireFunctionsModule, USE_EMULATOR as USE_FUNCTIONS_EMULATOR } from '@angular/fire/functions';
+import { MultiplayerComponent } from '../containers/multiplayer/multiplayer.component';
 
 const firebaseConfig = {
   apiKey: environment.FIREBASE_API_KEY,
@@ -59,6 +60,7 @@ const firebaseConfig = {
     LevelIntroComponent,
     LevelEndComponent,
     LobbyComponent,
+    MultiplayerComponent,
   ],
   imports: [
     CommonModule,

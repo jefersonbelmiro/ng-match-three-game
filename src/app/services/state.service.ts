@@ -1,5 +1,12 @@
 import { Injectable } from '@angular/core';
-import { Store, Tile, PowerUp, PowerUps, Colors, Level } from '../shared';
+import {
+  Store,
+  Tile,
+  PowerUp,
+  PowerUps,
+  Level,
+  MultiplayerData,
+} from '../shared';
 
 const initialStateFactory = () => ({
   scene: 'menu' as const,
@@ -33,6 +40,8 @@ export interface State {
   powerUps?: PowerUp[];
 
   level?: Level;
+
+  multiplayer?: MultiplayerData;
 }
 
 @Injectable({

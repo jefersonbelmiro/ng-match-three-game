@@ -19,9 +19,20 @@
     </ng-container>
 
     <ng-container *ngIf="match">
-      <div>opponent found, are you ready?</div>
+      <div *ngIf="multiplayerData?.player?.ready; else oponentReadyTpl">
+        waiting for opponent to get ready
+      </div>
+      <ng-template #oponentReadyTpl>
+        <div *ngIf="!multiplayerData?.oponent?.ready">
+          opponent found, are you ready?
+        </div>
+        <div *ngIf="multiplayerData?.oponent?.ready">
+          opponent ready, you too?
+        </div>
+      </ng-template>
+
       <div class="action">
-        <button (click)="onReady()" class="btn">Ready</button>
+        <button *ngIf="multiplayerData?.player?.ready === false" (click)="onReady()" class="btn">Ready</button>
         <button (click)="onCancel()" class="btn">Canceal</button>
         <button (click)="onLogout()" class="btn">Logout</button>
       </div>

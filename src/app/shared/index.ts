@@ -50,3 +50,16 @@ export interface Level {
   types: number[];
   complete?: boolean;
 }
+
+export interface MultiplayerPlayer {
+  uid: string;
+  displayName: string;
+  life: number;
+  ready?: boolean;
+}
+
+export interface MultiplayerData {
+  gameId: string;
+  oponent?: MultiplayerPlayer;
+  player?: MultiplayerPlayer;
+}
