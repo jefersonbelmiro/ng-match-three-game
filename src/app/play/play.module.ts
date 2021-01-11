@@ -26,8 +26,12 @@ import { PlayRoutingModule } from './play-routing.module';
 import { AuthService } from '../services/auth.service';
 
 import { USE_EMULATOR as USE_DATABASE_EMULATOR } from '@angular/fire/database';
-import { AngularFireFunctionsModule, USE_EMULATOR as USE_FUNCTIONS_EMULATOR } from '@angular/fire/functions';
+import {
+  AngularFireFunctionsModule,
+  USE_EMULATOR as USE_FUNCTIONS_EMULATOR,
+} from '@angular/fire/functions';
 import { MultiplayerComponent } from '../containers/multiplayer/multiplayer.component';
+import { MultiplayerStatusComponent } from '../components/multiplayer-status/multiplayer-status.component';
 
 const firebaseConfig = {
   apiKey: environment.FIREBASE_API_KEY,
@@ -61,6 +65,7 @@ const firebaseConfig = {
     LevelEndComponent,
     LobbyComponent,
     MultiplayerComponent,
+    MultiplayerStatusComponent,
   ],
   imports: [
     CommonModule,
@@ -74,11 +79,17 @@ const firebaseConfig = {
     AuthService,
     {
       provide: USE_DATABASE_EMULATOR,
-      useValue: environment.USE_EMULATORS ? ['localhost', 9000] : undefined,
+      useValue:
+        !environment.production && environment.USE_EMULATORS
+          ? ['localhost', 9000]
+          : undefined,
     },
     {
       provide: USE_FUNCTIONS_EMULATOR,
-      useValue: environment.USE_EMULATORS ? ['localhost', 5001] : undefined,
+      useValue:
+        !environment.production && environment.USE_EMULATORS
+          ? ['localhost', 5001]
+          : undefined,
     },
   ],
 })

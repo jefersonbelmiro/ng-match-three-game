@@ -20,10 +20,10 @@ export const OnWriteCommand = functions.database
 
     // Exit when the data is deleted.
     if (!change.after.exists()) {
-      const value = change.before.val();
-      console.log(`command was deleted ${cmd_id}`, value);
+      const beforeValue = change.before.val();
+      console.log(`command was deleted ${cmd_id}`, beforeValue);
       // remove player state
-      if (value?.command === 'match') {
+      if (beforeValue?.command === 'match') {
         return cleanPlayerState(uid, root);
       }
       return null;
@@ -80,13 +80,13 @@ async function onReady(
       return null;
     }
 
-    const player = state.players.find((player: { uid: string }) => {
-      return player.uid === uid;
+    const player = state.players.find((item: { uid: string }) => {
+      return item.uid === uid;
     });
     player.ready = true;
 
-    const notReady = state.players.some((player: { ready: boolean }) => {
-      return !player.ready;
+    const notReady = state.players.some((item: { ready: boolean }) => {
+      return !item.ready;
     });
     if (!notReady) {
       state.board = createBoard();
@@ -111,15 +111,19 @@ async function onMove(
   payload: MovePayload,
   root: admin.database.Reference
 ) {
-  const gameId = payload.gameId;
+  const { gameId } = payload;
   return root.child(`/games/${gameId}`).transaction((state) => {
     if (!state) {
       return null;
     }
 
+    state.turn = state.players.find(
+      (player: { uid: string }) => player.uid !== state.turn
+    ).uid;
+
     const updates = state.updates || [];
     const { source, target } = payload;
-    updates.push({ type: 'shift', source, target });
+    updates.push({ type: 'shift', ownerId: uid, source, target });
 
     state.updates = updates;
     return state;
@@ -136,12 +140,12 @@ async function cleanPlayerState(uid: string, root: admin.database.Reference) {
     const game = (
       await root.child(`/games/${state.gameId}`).once('value')
     ).val();
-    const oponent = game.players.find(
+    const opponent = game.players.find(
       (player: { uid: string }) => player.uid !== uid
     );
     updates.push(
       root
-        .child(`/players_states/${oponent.uid}`)
+        .child(`/players_states/${opponent.uid}`)
         .set({ matching: true, updated: true })
     );
     updates.push(root.child(`/games/${state.gameId}`).remove());
@@ -161,9 +165,10 @@ async function createGame(
       life: 2000,
     };
   });
+  const turn = playersIds[Math.floor(Math.random() * players.length)];
   const gameRef = await root.child('/games').push();
   const gameId = gameRef.key;
-  await gameRef.set({ players, gameId });
+  await gameRef.set({ players, gameId, turn });
 
   console.log('createGame', gameId, players);
 

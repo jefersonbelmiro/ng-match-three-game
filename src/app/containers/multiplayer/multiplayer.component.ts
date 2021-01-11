@@ -1,4 +1,10 @@
-import { Component, OnInit, ViewChild, ViewContainerRef } from '@angular/core';
+import {
+  Component,
+  OnDestroy,
+  OnInit,
+  ViewChild,
+  ViewContainerRef,
+} from '@angular/core';
 import { AngularFireDatabase } from '@angular/fire/database';
 import { DatabaseReference } from '@angular/fire/database/interfaces';
 import { Router } from '@angular/router';
@@ -13,7 +19,7 @@ import { Board, MultiplayerData, Tile } from '../../shared';
 
 interface Update {
   type: 'shift' | 'die' | 'powerUp';
-  ownerID: string;
+  ownerId: string;
   target: { row: number; column: number };
   source?: { row: number; column: number };
 }
@@ -23,15 +29,16 @@ interface Update {
   templateUrl: './multiplayer.component.html',
   styleUrls: ['./multiplayer.component.scss'],
 })
-export class MultiplayerComponent implements OnInit {
+export class MultiplayerComponent implements OnInit, OnDestroy {
   @ViewChild('container', { read: ViewContainerRef, static: true })
   container: ViewContainerRef;
 
   boardData: Board;
-  multiplayerData: MultiplayerData;
+  data: MultiplayerData;
 
-  refUpdateChanges: DatabaseReference;
   refCommands: DatabaseReference;
+  refUpdateChanges: DatabaseReference;
+  refTurnChanges: DatabaseReference;
 
   constructor(
     private tileBuilder: TileService,
@@ -58,26 +65,71 @@ export class MultiplayerComponent implements OnInit {
       return;
     }
 
-    const multiplayerData = currentState.multiplayer;
-    this.multiplayerData = currentState.multiplayer;
+    const data = currentState.multiplayer;
+    this.data = currentState.multiplayer;
     this.refCommands = this.firebase.database.ref(
-      `/commands/${multiplayerData.player.uid}`
+      `/commands/${data.player.uid}`
     );
+
+    this.refTurnChanges = this.firebase.database.ref(
+      `/games/${data.gameId}/turn`
+    );
+    this.refTurnChanges.on('value', this.onTurnChanges);
+
+    // get `/board` data and watch `/updates`
     this.firebase.database
-      .ref(`/games/${multiplayerData.gameId}/board`)
+      .ref(`/games/${data.gameId}/board`)
       .once('value')
       .then((snapshot) => {
         try {
           this.createBoard(snapshot.val());
           this.refUpdateChanges = this.firebase.database.ref(
-            `/games/${multiplayerData.gameId}/updates`
+            `/games/${data.gameId}/updates`
           );
           this.refUpdateChanges.on('child_added', this.onUpdateChanges);
         } catch (err) {
           console.error('board err', err);
         }
       });
+
+    // get displayName
+    const playerId = data.player.uid;
+    this.firebase.database
+      .ref(`/players/${playerId}/displayName`)
+      .once('value')
+      .then((snapshot) => {
+        this.data.player.displayName = snapshot.val() || 'you';
+      });
+
+    // get opponent displayName
+    const opponentID = data.opponent.uid;
+    this.firebase.database
+      .ref(`/players/${opponentID}/displayName`)
+      .once('value')
+      .then((snapshot) => {
+        this.data.opponent.displayName = snapshot.val() || 'opponent';
+      });
   }
+
+  ngOnDestroy() {
+    if (this.refUpdateChanges) {
+      this.refUpdateChanges.off('child_added', this.onUpdateChanges);
+    }
+    if (this.refTurnChanges) {
+      this.refTurnChanges.off('value', this.onTurnChanges);
+    }
+  }
+
+  onTurnChanges = (snapshot: firebase.database.DataSnapshot) => {
+    const uid = snapshot.val();
+    const playerTurn = uid === this.data.player.uid;
+    this.data.turn = playerTurn ? 'player' : 'opponent';
+    this.state.setBusy(!playerTurn, true);
+    console.log('turn changes', playerTurn, {
+      uid,
+      playerId: this.data.player.uid,
+    });
+  };
 
   onUpdateChanges = (snapshot: firebase.database.DataSnapshot) => {
     const update: Update = snapshot.val();
@@ -85,10 +137,7 @@ export class MultiplayerComponent implements OnInit {
     if (!update) {
       return;
     }
-    if (
-      update.ownerID === this.multiplayerData.player.uid ||
-      update.type !== 'shift'
-    ) {
+    if (update.ownerId === this.data.player.uid || update.type !== 'shift') {
       return;
     }
 
@@ -109,14 +158,20 @@ export class MultiplayerComponent implements OnInit {
   }
 
   onSwap({ source, target }) {
+    if (this.data.turn !== 'player') {
+      console.log('onSwap', this.data.turn);
+      return;
+    }
     const payload = {
       command: 'move',
-      gameId: this.multiplayerData.gameId,
-      owner: this.multiplayerData.player.uid,
+      gameId: this.data.gameId,
       source: { row: source.row, column: source.column },
       target: { row: target.row, column: target.column },
     };
     this.refCommands.push(payload);
+    this.data.turn = 'opponent';
+    this.state.setBusy(true, true);
+    this.doSwap(source, target).subscribe();
     console.log('onSwap', { source, target, payload });
   }
 
@@ -129,11 +184,6 @@ export class MultiplayerComponent implements OnInit {
       sourceTile.shift(target, options),
       targetTile.shift(source, options),
     ];
-    this.state.setBusy(true);
-    return forkJoin(shifts).pipe(
-      finalize(() => {
-        this.state.setBusy(false);
-      })
-    );
+    return forkJoin(shifts);
   }
 }

@@ -63,7 +63,7 @@ export class LobbyComponent implements OnInit {
       .subscribe(({ multiplayer }) => {
         this.multiplayerData = multiplayer;
         this.cd.detectChanges();
-        if (multiplayer?.player?.ready && multiplayer?.oponent?.ready) {
+        if (multiplayer?.player?.ready && multiplayer?.opponent?.ready) {
           this.ngZone.run(() => this.router.navigate(['/multiplayer']));
         }
       });
@@ -101,7 +101,7 @@ export class LobbyComponent implements OnInit {
     this.refPlayerState.on('value', this.onPlayerStateChanges);
 
     this.firebase.database.ref(`/players/${uid}`).update({
-      displayName: user.displayName || 'player',
+      displayName: user.displayName || null,
       photoUrl: user.photoURL || null,
     });
   }
@@ -173,12 +173,12 @@ export class LobbyComponent implements OnInit {
     const player = state.players.find(
       (item: { uid: string }) => item.uid === this.userData.uid
     );
-    const oponent = state.players.find(
+    const opponent = state.players.find(
       (item: { uid: string }) => item.uid !== this.userData.uid
     );
     const data: MultiplayerData = {
       gameId: state.gameId,
-      oponent,
+      opponent,
       player,
     };
     this.state.set({ multiplayer: data });

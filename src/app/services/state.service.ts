@@ -52,8 +52,8 @@ export class StateService extends Store<State> {
     super(initialStateFactory());
   }
 
-  setBusy(busy: boolean) {
-    let current = this.getValue().busy;
+  setBusy(busy: boolean, force = false) {
+    let current = force ? +busy : this.getValue().busy;
     current += busy ? 1 : -1;
     if (current < 0) {
       current = 0;

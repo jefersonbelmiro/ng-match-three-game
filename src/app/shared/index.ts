@@ -59,7 +59,8 @@ export interface MultiplayerPlayer {
 }
 
 export interface MultiplayerData {
+  turn?: 'player' | 'opponent';
   gameId: string;
-  oponent?: MultiplayerPlayer;
+  opponent?: MultiplayerPlayer;
   player?: MultiplayerPlayer;
 }
