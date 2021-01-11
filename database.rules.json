@@ -12,7 +12,7 @@
         ".write": "$uid === auth.uid"
       }
     },
-    "player_states": {
+    "players_states": {
       "$uid": {
         ".read": "$uid === auth.uid",
         ".write": false

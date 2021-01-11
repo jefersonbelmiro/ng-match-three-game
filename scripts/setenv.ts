@@ -21,7 +21,13 @@ function getEnvKeys() {
       return line.trim().replace('=', '');
     })
     .filter((item) => item)
-    .map((key) => `"${key}": "${process.env[key]}"`)
+    .map((key) => {
+      let value = process.env[key];
+      if (value !== 'true' && value !== 'false') {
+        value = `"${value}"`;
+      }
+      return `"${key}": ${value}`;
+    })
     .join(',');
   const json = `{${data}}`;
   return JSON.stringify(JSON.parse(json), null, 2);

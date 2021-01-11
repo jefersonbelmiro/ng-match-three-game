@@ -98,7 +98,9 @@ export class LobbyComponent implements OnInit {
     this.refPlayerState = this.firebase.database.ref(`/players_states/${uid}`);
     this.refCommands = this.firebase.database.ref(`/commands/${uid}`);
 
-    this.refPlayerState.on('value', this.onPlayerStateChanges);
+    this.refPlayerState.on('value', this.onPlayerStateChanges, (err) =>
+      console.log('players_states error', err)
+    );
 
     this.firebase.database.ref(`/players/${uid}`).update({
       displayName: user.displayName || null,
