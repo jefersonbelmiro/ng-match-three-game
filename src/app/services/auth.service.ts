@@ -89,9 +89,6 @@ export class AuthService {
         return this.userData;
       })
     );
-    // return this.afAuth.signInWithPopup(provider).then(response => {
-    //   console.log('response', response);
-    // });
   }
 
   signOut() {

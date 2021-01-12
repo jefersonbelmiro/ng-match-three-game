@@ -60,7 +60,7 @@ export interface MultiplayerPlayer {
 
 export interface MultiplayerData {
   turn?: 'player' | 'opponent';
-  gameId: string;
+  gameId?: string;
   opponent?: MultiplayerPlayer;
   player?: MultiplayerPlayer;
 }

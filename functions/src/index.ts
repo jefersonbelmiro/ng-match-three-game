@@ -52,6 +52,7 @@ async function onMatch(uid: string, root: admin.database.Reference) {
 
   const players =
     (await root.child('/players_states').once('value'))?.val() || {};
+
   console.log('players', players);
 
   const opponent = Object.keys(players).find((key: string) => {
@@ -143,11 +144,23 @@ async function cleanPlayerState(uid: string, root: admin.database.Reference) {
     const opponent = game.players.find(
       (player: { uid: string }) => player.uid !== uid
     );
+
     updates.push(
-      root
-        .child(`/players_states/${opponent.uid}`)
-        .set({ matching: true, updated: true })
+      root.child(`/players_states/${opponent.uid}`).transaction((state) => {
+        if (!state) {
+          return null;
+        }
+        if (state.match) {
+          state.match = false;
+          state.matching = true;
+        }
+        return state;
+      })
     );
+
+    // updates.push(
+    //   root.child(`/players_states/${opponent.uid}`).set({ matching: true })
+    // );
     updates.push(root.child(`/games/${state.gameId}`).remove());
   }
   updates.push(root.child(`/players_states/${uid}`).remove());
@@ -174,7 +187,9 @@ async function createGame(
 
   const updates = playersIds.map((uid, index) => {
     const opponent = index === 0 ? players[1] : players[0];
-    return root.child(`/players_states/${uid}`).set({ gameId, opponent });
+    return root
+      .child(`/players_states/${uid}`)
+      .set({ gameId, opponent, matching: false, match: true });
   });
 
   return Promise.all(updates);
