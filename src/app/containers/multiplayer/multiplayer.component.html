@@ -1,5 +1,9 @@
 <div class="content">
-  <app-multiplayer-status [data]="data"></app-multiplayer-status>
+  <app-multiplayer-status
+    [player]="player"
+    [opponent]="opponent"
+    [turnId]="turnId"
+  ></app-multiplayer-status>
 
   <app-board
     [width]="boardData.width"
@@ -12,7 +16,7 @@
     <ng-container #container></ng-container>
   </app-board>
 
-  <app-power-ups></app-power-ups>
+  <!-- <app&#45;power&#45;ups></app&#45;power&#45;ups> -->
 </div>
 
 <app-play-background></app-play-background>

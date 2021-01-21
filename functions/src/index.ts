@@ -1,102 +1,11 @@
 import * as admin from 'firebase-admin';
 import * as functions from 'firebase-functions';
 
-const TYPES_INDEX = [0, 1, 2, 3];
+import { Game, PlayerState } from './../../shared/server';
+import { createBoard, shift } from './../../shared/board';
+import { find } from './../../shared/find';
 
-// // Start writing Firebase Functions
-// // https://firebase.google.com/docs/functions/typescript
-//
-// export const helloWorld = functions.https.onRequest((request, response) => {
-//   functions.logger.info('Hello logs[3]!', { structuredData: true });
-//   response.send('Hello from Firebase[3.1]!');
-// });
-
-export const OnWriteCommand = functions.database
-  .ref('/commands/{uid}/{cmd_id}')
-  .onWrite((change, context) => {
-    const uid = context.params.uid;
-    const cmd_id = context.params.cmd_id;
-    const root = change.after.ref.root;
-
-    // Exit when the data is deleted.
-    if (!change.after.exists()) {
-      const beforeValue = change.before.val();
-      console.log(`command was deleted ${cmd_id}`, beforeValue);
-      // remove player state
-      if (beforeValue?.command === 'match') {
-        return cleanPlayerState(uid, root);
-      }
-      return null;
-    }
-
-    const value = change.after.val();
-    const command = value.command;
-
-    console.log('command', { uid, cmd_id, command_value: value });
-    functions.logger.info('command', { uid, cmd_id, command_value: value });
-
-    switch (command) {
-      case 'match':
-        return onMatch(uid, root);
-      case 'ready':
-        return onReady(uid, value, root);
-      case 'move':
-        return onMove(uid, value, root);
-    }
-
-    return null;
-  });
-
-async function onMatch(uid: string, root: admin.database.Reference) {
-  await root.child(`players_states/${uid}`).set({ matching: true });
-
-  const players =
-    (await root.child('/players_states').once('value'))?.val() || {};
-
-  console.log('players', players);
-
-  const opponent = Object.keys(players).find((key: string) => {
-    const value = players[key];
-    if (key === uid || value?.matching !== true) {
-      return false;
-    }
-    return true;
-  });
-
-  if (opponent) {
-    return createGame([uid, opponent], root);
-  }
-
-  console.log('opponent', opponent);
-  return null;
-}
-
-async function onReady(
-  uid: string,
-  { gameId }: { gameId: string },
-  root: admin.database.Reference
-) {
-  return root.child(`/games/${gameId}`).transaction((state) => {
-    if (!state) {
-      return null;
-    }
-
-    const player = state.players.find((item: { uid: string }) => {
-      return item.uid === uid;
-    });
-    player.ready = true;
-
-    const notReady = state.players.some((item: { ready: boolean }) => {
-      return !item.ready;
-    });
-    if (!notReady) {
-      state.board = createBoard();
-    }
-    return state;
-  });
-}
-
-interface MovePayload {
+interface ShiftPayload {
   gameId: string;
   source: {
     row: number;
@@ -107,46 +16,164 @@ interface MovePayload {
     column: number;
   };
 }
-async function onMove(
-  uid: string,
-  payload: MovePayload,
+
+interface ReadyPayload {
+  gameId: string;
+}
+// const TYPES_INDEX = [0, 1, 2, 3];
+
+// // Start writing Firebase Functions
+// // https://firebase.google.com/docs/functions/typescript
+//
+// export const helloWorld = functions.https.onRequest((request, response) => {
+//   functions.logger.info('Hello logs[3]!', { structuredData: true });
+//   response.send('Hello from Firebase[3.1]!');
+// });
+
+export const OnWriteCommand = functions.database
+  .ref('/commands/{id}/{cmd_id}')
+  .onWrite((change, context) => {
+    const id = context.params.id;
+    const cmd_id = context.params.cmd_id;
+    const root = change.after.ref.root;
+
+    // Exit when the data is deleted.
+    if (!change.after.exists()) {
+      const beforeValue = change.before.val();
+      console.log(`command was deleted ${cmd_id}`, beforeValue);
+      // remove player state
+      if (beforeValue?.command === 'match') {
+        return cleanPlayerState(id, root);
+      }
+      return null;
+    }
+
+    const value = change.after.val();
+    const command = value.command;
+
+    console.log('command', { id, cmd_id, command_value: value });
+    functions.logger.info('command', { id, cmd_id, command_value: value });
+
+    switch (command) {
+      case 'match':
+        return onMatch(id, root);
+      case 'ready':
+        return onReady(id, value, root);
+      case 'shift':
+        return onShift(id, value, root);
+    }
+
+    return null;
+  });
+
+async function onMatch(id: string, root: admin.database.Reference) {
+  await root.child(`players_states/${id}`).set({ matching: true });
+
+  const players =
+    (await root.child('/players_states').once('value'))?.val() || {};
+
+  console.log('players', players);
+
+  const opponent = Object.keys(players).find((key: string) => {
+    const player = players[key] as PlayerState;
+    if (key === id || player?.matching !== true) {
+      return false;
+    }
+    return true;
+  });
+
+  if (opponent) {
+    return createGame([id, opponent], root);
+  }
+
+  console.log('opponent', opponent);
+  return null;
+}
+
+async function onReady(
+  id: string,
+  { gameId }: ReadyPayload,
   root: admin.database.Reference
 ) {
-  const { gameId } = payload;
   return root.child(`/games/${gameId}`).transaction((state) => {
     if (!state) {
       return null;
     }
 
-    state.turn = state.players.find(
-      (player: { uid: string }) => player.uid !== state.turn
-    ).uid;
+    const player = state.players.find((item: { id: string }) => {
+      return item.id === id;
+    });
+    player.ready = true;
 
-    const updates = state.updates || [];
-    const { source, target } = payload;
-    updates.push({ type: 'shift', ownerId: uid, source, target });
-
-    state.updates = updates;
+    const allReady = state.players.every((item: { ready: boolean }) => {
+      return item.ready;
+    });
+    if (allReady) {
+      state.board = createBoard();
+    }
     return state;
   });
 }
 
-async function cleanPlayerState(uid: string, root: admin.database.Reference) {
-  const state = (
-    await root.child(`/players_states/${uid}`).once('value')
-  )?.val();
+async function onShift(
+  id: string,
+  payload: ShiftPayload,
+  root: admin.database.Reference
+) {
+  const { gameId } = payload;
+  return root.child(`/games/${gameId}`).transaction((state: Game) => {
+    if (!state) {
+      return null;
+    }
+
+    const timestamp = Date.now();
+    const { source, target } = payload;
+    const updates = state.updates || [];
+    const board = state.board || [];
+    shift(source, target, board)
+    const matches = find(board, target);
+
+    console.log('matches', matches);
+
+    state.turnId = state.players.find(
+      (player) => player.id !== state.turnId
+    )?.id;
+
+    const update = {
+      type: 'shift',
+      ownerId: id,
+      source,
+      target,
+      timestamp,
+    };
+    updates.push(update);
+
+    state.updates = updates;
+    state.board = board;
+
+    console.log('onShift', { update });
+
+    return state;
+  });
+}
+
+async function cleanPlayerState(id: string, root: admin.database.Reference) {
+  const playerState = (
+    await root.child(`/players_states/${id}`).once('value')
+  )?.val() as PlayerState;
 
   const updates = [];
-  if (state?.gameId) {
+  if (playerState?.gameId) {
     const game = (
-      await root.child(`/games/${state.gameId}`).once('value')
+      await root.child(`/games/${playerState.gameId}`).once('value')
     ).val();
     const opponent = game.players.find(
-      (player: { uid: string }) => player.uid !== uid
+      (player: { id: string }) => player.id !== id
     );
 
+    // set opponent to matching again
     updates.push(
-      root.child(`/players_states/${opponent.uid}`).transaction((state) => {
+      root.child(`/players_states/${opponent.id}`).transaction((state) => {
         if (!state) {
           return null;
         }
@@ -158,12 +185,10 @@ async function cleanPlayerState(uid: string, root: admin.database.Reference) {
       })
     );
 
-    // updates.push(
-    //   root.child(`/players_states/${opponent.uid}`).set({ matching: true })
-    // );
-    updates.push(root.child(`/games/${state.gameId}`).remove());
+    // remove game
+    updates.push(root.child(`/games/${playerState.gameId}`).remove());
   }
-  updates.push(root.child(`/players_states/${uid}`).remove());
+  updates.push(root.child(`/players_states/${id}`).remove());
   return Promise.all(updates);
 }
 
@@ -171,41 +196,25 @@ async function createGame(
   playersIds: string[],
   root: admin.database.Reference
 ) {
-  const players = playersIds.map((uid) => {
+  const players = playersIds.map((id) => {
     return {
-      uid,
+      id,
       ready: false,
       life: 2000,
     };
   });
-  const turn = playersIds[Math.floor(Math.random() * players.length)];
+  const turnId = playersIds[Math.floor(Math.random() * players.length)];
   const gameRef = await root.child('/games').push();
   const gameId = gameRef.key;
-  await gameRef.set({ players, gameId, turn });
+  await gameRef.set({ id: gameId, players, turnId });
 
   console.log('createGame', gameId, players);
 
-  const updates = playersIds.map((uid, index) => {
-    const opponent = index === 0 ? players[1] : players[0];
+  const updates = playersIds.map((id) => {
     return root
-      .child(`/players_states/${uid}`)
-      .set({ gameId, opponent, matching: false, match: true });
+      .child(`/players_states/${id}`)
+      .set({ gameId, matching: false, match: true });
   });
 
   return Promise.all(updates);
-}
-
-function getRandomType() {
-  return TYPES_INDEX[Math.floor(Math.random() * TYPES_INDEX.length)];
-}
-
-function createBoard() {
-  const data: number[][] = [];
-  for (let row = 0; row < 5; row++) {
-    data[row] = [];
-    for (let column = 0; column < 5; column++) {
-      data[row][column] = getRandomType();
-    }
-  }
-  return data;
 }

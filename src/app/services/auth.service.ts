@@ -34,7 +34,7 @@ export class AuthService {
     public afAuth: AngularFireAuth // Inject Firebase auth service
   ) {
     this.afAuth.authState.subscribe((user) => {
-      console.log('auth subscribe', user?.displayName, { user });
+      console.log('auth subscribe', { user });
       this.userData = user;
       this.userDataSubject.next(user);
       this.userDataChange.next(user);

@@ -2,8 +2,8 @@
   <div *ngIf="loading">loading...</div>
 
   <ng-container *ngIf="!loading">
-    <ng-container *ngIf="userData && !match">
-      <ng-container *ngIf="matching; else showFind">
+    <ng-container *ngIf="user && !playerState?.match">
+      <ng-container *ngIf="playerState?.matching; else showFind">
         <div>Find opponent...</div>
         <div class="action">
           <button (click)="onCancel()" class="btn">Canceal</button>
@@ -14,35 +14,37 @@
         <div class="action">
           <button (click)="onFindOpponent()" class="btn">Find opponent</button>
           <button (click)="onLogout()" class="btn">Logout</button>
+          <button class="btn" routerLink="/">Back</button>
         </div>
       </ng-template>
     </ng-container>
 
-    <ng-container *ngIf="match">
-      <div *ngIf="multiplayerData?.player?.ready; else oponentReadyTpl">
+    <ng-container *ngIf="playerState?.match">
+      <div *ngIf="player?.ready; else oponentReadyTpl">
         waiting for opponent to get ready
       </div>
       <ng-template #oponentReadyTpl>
-        <div *ngIf="!multiplayerData?.opponent?.ready">
+        <div *ngIf="!opponent?.ready">
           opponent found, are you ready?
         </div>
-        <div *ngIf="multiplayerData?.opponent?.ready">
+        <div *ngIf="opponent?.ready">
           opponent ready, you too?
         </div>
       </ng-template>
 
       <div class="action">
-        <button *ngIf="multiplayerData?.player?.ready === false" (click)="onReady()" class="btn">Ready</button>
+        <button *ngIf="!player?.ready" (click)="onReady()" class="btn">Ready</button>
         <button (click)="onCancel()" class="btn">Canceal</button>
         <button (click)="onLogout()" class="btn">Logout</button>
       </div>
     </ng-container>
 
-    <div class="action" *ngIf="!userData">
+    <div class="action" *ngIf="!user">
       <button (click)="onLoginWithGoogle()" class="btn">
         Login with google
       </button>
       <button (click)="onLoginAnonymous()" class="btn">Login anonymous</button>
+      <button class="btn" routerLink="/">Back</button>
     </div>
   </ng-container>
 </div>

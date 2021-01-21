@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { AngularFireDatabase } from '@angular/fire/database';
-import { User } from 'firebase';
 import {
+  BehaviorSubject,
   EMPTY,
   from,
   Observable,
@@ -10,42 +10,46 @@ import {
   Subscription,
 } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
+import { Command, Game, Player, PlayerState, Update } from '@shared/server';
+import { EventType, DataSnapshot, Reference, User } from '../shared/firebase';
 import { AuthService } from './auth.service';
-
-type EventType = firebase.database.EventType;
-type DataSnapshot = firebase.database.DataSnapshot;
-type Reference = firebase.database.Reference;
 
 @Injectable({
   providedIn: 'root',
 })
 export class ServerService {
   changes = {
-    user: new ReplaySubject(1),
-    game: new ReplaySubject(1),
-    players: new ReplaySubject(1),
-    board: new ReplaySubject(1),
-    turn: new ReplaySubject(1),
-    playersStates: new ReplaySubject(1),
-    updates: new ReplaySubject(1),
+    user: new ReplaySubject<User>(1),
+    game: new ReplaySubject<Game>(1),
+    players: new ReplaySubject<Player>(1),
+    board: new BehaviorSubject<number[][]>([]),
+    turn: new ReplaySubject<string>(1),
+    playersStates: new ReplaySubject<PlayerState>(1),
+    updates: new ReplaySubject<Update>(1),
   };
 
   private user: User;
   private gameId: string;
   private refCommands: Reference;
-  private refs = new Map<string, Subscription>();
+  refs = new Map<string, Subscription>();
   private destroyed$ = new ReplaySubject(1);
 
   constructor(
     private auth: AuthService,
     private firebase: AngularFireDatabase
   ) {
-    this.auth.userDataObservable.pipe(takeUntil(this.destroyed$)).subscribe((user) => {
-      console.log('subscribe userData observable', { user });
-      if (user && this.user !== user) {
-        this.onLogin(user);
-      }
-    });
+    this.auth.userDataObservable
+      .pipe(takeUntil(this.destroyed$))
+      .subscribe((user) => {
+        console.log('userDataObservable', { user });
+        const diff = this.user !== user;
+        this.user = user;
+        this.changes.user.next(user);
+
+        if (user && diff) {
+          this.onLogin(user);
+        }
+      });
   }
 
   ngOnDestroy() {
@@ -77,12 +81,13 @@ export class ServerService {
     console.log('ready', { uid, gameId });
   }
 
-  pushCommand(payload: { command?: string }) {
+  pushCommand(payload: Command) {
     return from(this.refCommands.push(payload));
   }
 
   removeCommands() {
     const uid = this.user?.uid;
+    console.log('removeCommands', `/commands/${uid}`);
     if (uid) {
       return from(this.ref(`/commands/${uid}`).remove());
     }
@@ -100,6 +105,7 @@ export class ServerService {
       const ref = this.ref(path);
       ref.on(type, onValue, onError);
       return () => {
+        console.log('OFF', path);
         ref.off(type, onValue);
       };
     });
@@ -139,8 +145,6 @@ export class ServerService {
 
   private onLogin(user: User) {
     console.log('onLogin', { user });
-    this.user = user;
-    this.changes.user.next(user);
 
     this.listen('/players_states/{uid}', this.onPlayerStateChanges);
 
@@ -169,16 +173,23 @@ export class ServerService {
       this.listen('/games/{gameId}/board', (value) => {
         this.changes.board.next(value);
       });
-      this.listen('/games/{gameId}/turn', (value) => {
+      this.listen('/games/{gameId}/turnId', (value) => {
         this.changes.turn.next(value);
       });
-      this.listen(
-        '/games/{gameId}/updates',
-        (value) => {
-          this.changes.updates.next(value);
-        },
-        'child_added'
-      );
+      // this.listen(
+      //   '/games/{gameId}/updates',
+      //   (value) => {
+      //     this.changes.updates.next(value);
+      //   },
+      //   'child_added'
+      // );
+
+      this.ref('/games/{gameId}/updates')
+        .orderByChild('timestamp')
+        .startAt(Date.now())
+        .on('child_added', (snapshot) => {
+          this.changes.updates.next(snapshot.val());
+        });
     }
   };
 

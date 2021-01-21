@@ -55,7 +55,12 @@ export class BoardService {
       this.data[row] = [];
       for (let column = 0; column < data[row].length; column++) {
         const index = data[row][column];
-        this.createAt({ row, column }, monsters[index]);
+        const type = monsters[index];
+        if (!type) {
+          console.error('invalid type: ', type, { row, column, data });
+          continue;
+        }
+        this.createAt({ row, column }, type);
       }
     }
   }

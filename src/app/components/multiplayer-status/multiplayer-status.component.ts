@@ -1,18 +1,44 @@
-import { Component, Input, OnInit } from '@angular/core';
-import { MultiplayerData } from '../../shared';
+import { Component, Input, OnChanges, SimpleChanges } from '@angular/core';
+import { from, of } from 'rxjs';
+import { ServerService } from '../../services/server.service';
+import { Player } from '@shared/server';
 
 @Component({
   selector: 'app-multiplayer-status',
   templateUrl: './multiplayer-status.component.html',
-  styleUrls: ['./multiplayer-status.component.scss']
+  styleUrls: ['./multiplayer-status.component.scss'],
 })
-export class MultiplayerStatusComponent implements OnInit {
+export class MultiplayerStatusComponent implements OnChanges {
+  @Input() player: Player;
+  @Input() opponent: Player;
+  @Input() turnId: string;
 
-  @Input() data: MultiplayerData;
+  constructor(private server: ServerService) {}
 
-  constructor() { }
-
-  ngOnInit(): void {
+  ngOnChanges(changes: SimpleChanges) {
+    if (changes?.player && this.player) {
+      this.getDisplayName(this.player.id, 'player').subscribe((displayName) => {
+        this.player.displayName = displayName;
+      });
+    }
+    if (changes?.opponent && this.opponent) {
+      this.getDisplayName(this.opponent.id, 'opponent').subscribe((displayName) => {
+        this.opponent.displayName = displayName;
+      });
+    }
   }
 
+  private getDisplayName(id: string, defaultValue = null) {
+    if (!id) {
+      return of(defaultValue);
+    }
+    return from(
+      this.server
+        .ref(`/players/${id}/displayName`)
+        .once('value')
+        .then((snapshot) => {
+          return snapshot.val() || defaultValue;
+        })
+    );
+  }
 }

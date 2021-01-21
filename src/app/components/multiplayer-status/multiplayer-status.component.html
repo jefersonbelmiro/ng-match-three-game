@@ -1,13 +1,13 @@
-<div class="content" *ngIf="data">
+<div class="content">
   <div class="player box">
-    <div class="nick align-left">{{ data.player.displayName }}</div>
-    <div class="life align-left">{{ data.player.life }}</div>
-    <div class="turn" [class.turn--show]="data.turn === 'player'">your turn</div>
+    <div class="nick align-left">{{ player?.displayName }}</div>
+    <div class="life align-left">{{ player?.life }}</div>
+    <div class="turn" [class.turn--show]="turnId === player?.id">your turn</div>
   </div>
 
   <div class="opponent box">
-    <div class="nick align-right">{{ data.opponent.displayName }}</div>
-    <div class="life align-right">{{ data.opponent.life }}</div>
-    <div class="turn" [class.turn--show]="data.turn === 'opponent'">opponent's turn</div>
+    <div class="nick align-right">{{ opponent?.displayName }}</div>
+    <div class="life align-right">{{ opponent?.life }}</div>
+    <div class="turn" [class.turn--show]="turnId === opponent?.id">opponent's turn</div>
   </div>
 </div>

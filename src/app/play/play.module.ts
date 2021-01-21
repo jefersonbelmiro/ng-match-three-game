@@ -32,6 +32,7 @@ import {
 } from '@angular/fire/functions';
 import { MultiplayerComponent } from '../containers/multiplayer/multiplayer.component';
 import { MultiplayerStatusComponent } from '../components/multiplayer-status/multiplayer-status.component';
+import { ServerService } from '../services/server.service';
 
 const firebaseConfig = {
   apiKey: environment.FIREBASE_API_KEY,
@@ -77,6 +78,7 @@ const firebaseConfig = {
   ],
   providers: [
     AuthService,
+    ServerService,
     {
       provide: USE_DATABASE_EMULATOR,
       useValue:

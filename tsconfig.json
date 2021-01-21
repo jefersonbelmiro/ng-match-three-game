@@ -12,10 +12,10 @@
     "importHelpers": true,
     "target": "es2015",
     "allowSyntheticDefaultImports": true,
-    "lib": [
-      "es2018",
-      "dom"
-    ]
+    "lib": ["es2018", "dom"],
+    "paths": {
+      "@shared/*": ["./shared/*"]
+    }
   },
   "angularCompilerOptions": {
     "fullTemplateTypeCheck": true,

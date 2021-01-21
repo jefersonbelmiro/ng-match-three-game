@@ -1,16 +1,11 @@
 import { ChangeDetectorRef, Component, NgZone, OnInit } from '@angular/core';
-import { AngularFireDatabase } from '@angular/fire/database';
 import { DatabaseReference } from '@angular/fire/database/interfaces';
-import { finalize, take, takeUntil } from 'rxjs/operators';
-// import * as firebase from 'firebase';
-// import * as firebase from 'firebase/app';
-// import 'firebase/functions';
-import { AuthService } from '../../services/auth.service';
-import firebase from 'firebase/app';
-import { StateService } from '../../services/state.service';
-import { MultiplayerData } from '../../shared';
+import { finalize, takeUntil } from 'rxjs/operators';
 import { Router } from '@angular/router';
 import { ReplaySubject } from 'rxjs';
+import { ServerService } from '../../services/server.service';
+import { Game, Player, PlayerState } from '@shared/server';
+import { User } from '../../shared/firebase';
 
 @Component({
   selector: 'app-lobby',
@@ -18,190 +13,124 @@ import { ReplaySubject } from 'rxjs';
   styleUrls: ['./lobby.component.scss'],
 })
 export class LobbyComponent implements OnInit {
-  userData: firebase.User;
-  loading = false;
-  match = false;
-  matching = false;
-  ready = false;
+  user: User;
+  playerState: PlayerState;
+  game: Game;
 
-  multiplayerData: MultiplayerData;
+  player: Player;
+  opponent: Player;
+
+  loading = false;
 
   refGameState: DatabaseReference;
   refPlayerState: DatabaseReference;
   refCommands: DatabaseReference;
 
   destroyed$ = new ReplaySubject(1);
+
   constructor(
-    private firebase: AngularFireDatabase,
-    private auth: AuthService,
     private cd: ChangeDetectorRef,
-    private state: StateService,
     private router: Router,
-    private ngZone: NgZone
+    private ngZone: NgZone,
+    private server: ServerService
   ) {}
 
   ngOnInit(): void {
-    console.log('init', { userData: this.auth.userData });
-
     this.loading = true;
-    this.auth.userDataObservable
-      .pipe(
-        take(1),
-        finalize(() => (this.loading = false))
-      )
+    this.server.changes.user
+      .pipe(takeUntil(this.destroyed$))
       .subscribe((user) => {
-        console.log('subscribe userData observable', { user });
-        this.userData = user;
-        if (user) {
-          this.onLogin(user);
-        }
+        this.user = user;
+        this.loading = false;
+        this.cd.detectChanges();
+        console.log('subscribe user observable', user?.uid, { user });
       });
 
-    this.state
-      .getState()
+    this.server.changes.playersStates
       .pipe(takeUntil(this.destroyed$))
-      .subscribe(({ multiplayer }) => {
-        this.multiplayerData = multiplayer;
+      .subscribe((state) => {
+        console.log('playersStates changes', state);
+        this.playerState = state;
         this.cd.detectChanges();
-        if (multiplayer?.player?.ready && multiplayer?.opponent?.ready) {
+      });
+
+    this.server.changes.game
+      .pipe(takeUntil(this.destroyed$))
+      .subscribe((game) => {
+        console.log('game changes', game);
+        this.game = game;
+        if (!game) {
+          return;
+        }
+        this.player = game.players.find(
+          (player) => player.id === this.user.uid
+        );
+        this.opponent = game.players.find(
+          (player) => player.id !== this.user.uid
+        );
+
+        const playersReady = game.players.every((player) => player.ready);
+        if (playersReady) {
           this.ngZone.run(() => this.router.navigate(['/multiplayer']));
         }
+
+        this.cd.detectChanges();
+        console.log('game players', {
+          player: this.player,
+          opponent: this.opponent,
+        });
       });
   }
 
   ngOnDestroy() {
     this.destroyed$.next();
     this.destroyed$.complete();
-    if (this.matching) {
-      this.removeCommands();
+    if (this.playerState.matching) {
+      this.server.removeCommands();
     }
-    this.removeListeners();
   }
 
   onLoginWithGoogle() {
-    this.auth.loginWithGoogle().subscribe((user) => this.onLogin(user));
+    this.loading = true;
+    this.server
+      .loginWithGoogle()
+      .pipe(finalize(() => (this.loading = false)))
+      .subscribe();
   }
 
   onLoginAnonymous() {
     this.loading = true;
-    this.auth
+    this.server
       .loginAnonymously()
       .pipe(finalize(() => (this.loading = false)))
-      .subscribe((user) => this.onLogin(user));
+      .subscribe();
   }
 
-  onLogin(user: firebase.User) {
-    console.log('onLogin', { user });
-    const uid = user.uid;
-
-    this.userData = user;
-    this.refPlayerState = this.firebase.database.ref(`/players_states/${uid}`);
-    this.refCommands = this.firebase.database.ref(`/commands/${uid}`);
-
-    this.refPlayerState.on('value', this.onPlayerStateChanges, (err) =>
-      console.log('players_states error', err)
-    );
-
-    this.firebase.database.ref(`/players/${uid}`).update({
-      displayName: user.displayName || null,
-      photoUrl: user.photoURL || null,
-    });
-  }
-
-  async onFindOpponent() {
+  onFindOpponent() {
     console.log('find opponent');
-    this.matching = true;
-    await this.refCommands.push({ command: 'match' });
+    if (!this.playerState) {
+      this.playerState = {};
+    }
+    this.playerState.matching = true;
+    this.server.pushCommand({ command: 'match' });
   }
 
   onReady() {
-    this.ready = true;
-    const uid = this.userData.uid;
-    const gameId = this.multiplayerData.gameId;
-    this.refCommands.push({ command: 'ready', gameId });
-    console.log('ready', { uid, gameId });
+    this.server.setReady();
   }
 
   onCancel() {
     console.log('cancel');
-    this.match = false;
-    this.matching = false;
-    this.ready = false;
+    this.playerState.match = false;
     this.cd.detectChanges();
-    this.removeCommands();
+    this.server.removeCommands();
   }
 
   onLogout() {
     console.log('logout');
-    this.removeCommands();
-    this.removeListeners();
-    this.auth.signOut().subscribe(() => {
-      this.userData = null;
+    this.server.removeCommands();
+    this.server.signOut().subscribe(() => {
+      this.user = null;
     });
-  }
-
-  onPlayerStateChanges = (snapshot: firebase.database.DataSnapshot) => {
-    const state = snapshot.val();
-    console.log('onPlayerStateChanges', state);
-    if (!state) {
-      return;
-    }
-
-    this.matching = state?.matching;
-    if (state?.gameId) {
-      this.match = true;
-      this.refGameState = this.firebase.database.ref(`/games/${state.gameId}`);
-      this.refGameState.on('value', this.onGameStateChanges);
-    }
-
-    this.cd.detectChanges();
-  };
-
-  onGameStateChanges = (snapshot: firebase.database.DataSnapshot) => {
-    const state = snapshot.val();
-    console.log('onGameStateChanges', state, {
-      matching: this.matching,
-      match: this.match,
-    });
-    // remove removed
-    if (!state) {
-      // when match is because other play leave lobby, continue to find
-      this.matching = this.match;
-      this.match = false;
-      this.cd.detectChanges();
-      return;
-    }
-
-    const player = state.players.find(
-      (item: { uid: string }) => item.uid === this.userData.uid
-    );
-    const opponent = state.players.find(
-      (item: { uid: string }) => item.uid !== this.userData.uid
-    );
-    const data: MultiplayerData = {
-      gameId: state.gameId,
-      opponent,
-      player,
-    };
-    this.state.set({ multiplayer: data });
-  };
-
-  private removeListeners() {
-    if (this.refPlayerState) {
-      this.refPlayerState.off('value', this.onPlayerStateChanges);
-      this.refPlayerState = undefined;
-    }
-
-    if (this.refGameState) {
-      this.refGameState.off('value', this.onGameStateChanges);
-      this.refGameState = undefined;
-    }
-  }
-
-  private async removeCommands() {
-    const uid = this.userData?.uid;
-    if (uid) {
-      await this.firebase.database.ref(`/commands/${uid}`).remove();
-    }
   }
 }
