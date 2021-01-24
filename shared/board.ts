@@ -114,7 +114,7 @@ export function fill(board: number[][], pool: number[]): Update[] {
           type: 'shift',
           source: { row, column },
           target: { row: row + shiftSize, column },
-        });
+        } as Update);
       }
     }
     shiftData.forEach(({ row, column }) => {
@@ -123,14 +123,17 @@ export function fill(board: number[][], pool: number[]): Update[] {
         type: 'new',
         source: { row: row - shiftSize, column, type },
         target: { row, column },
-      });
+      } as Update);
     });
   }
   return updates;
 }
 
-export function equal(source: Tile, target: Tile) {
+export function equal(source: any, target: any) {
   return Object.keys(source).every((key) => {
+    if (!(key in source) || !(key in target)) {
+      return false;
+    }
     return source[key] === target[key];
   });
 }
@@ -149,13 +152,13 @@ export function apply(updates: Update[], board: number[][]) {
 
   updates.forEach((update) => {
     if (update.type === 'die') {
-      setAt(update.target, -1, data);
+      setAt(update.target!, -1, data);
     }
     if (update.type === 'shift') {
-      data = shift(update.source, update.target, data);
+      data = shift(update.source!, update.target!, data);
     }
     if (update.type === 'new') {
-      setAt(update.target, update.source.type, data);
+      setAt(update.target!, update.source?.type!, data);
     }
   });
 

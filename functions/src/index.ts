@@ -1,7 +1,5 @@
 import * as admin from 'firebase-admin';
 import * as functions from 'firebase-functions';
-
-import { Game, PlayerState } from './../../shared/server';
 import {
   apply,
   createBoard,
@@ -11,6 +9,7 @@ import {
   shift,
 } from './../../shared/board';
 import { find } from './../../shared/find';
+import { Game, PlayerState } from './../../shared/server';
 
 interface ShiftPayload {
   gameId: string;
@@ -142,7 +141,7 @@ async function onShift(
     console.log('-- previous', board);
 
     board = shift(source, target, board);
-    const matches = find(board, target);
+    const matches = find(board);
 
     console.log('-- current', board);
     console.log('-- matches', matches.length);
@@ -162,13 +161,23 @@ async function onShift(
 
     if (matches?.length) {
       const updatesDie = matchesToUpdate(matches);
-      const updatesFill = fill(board, pool);
-      // update current board
       board = apply(updatesDie, board);
+
+      const updatesFill = fill(board, pool);
       board = apply(updatesFill, board);
-      // story list of updates
-      updates.push(...updatesDie);
-      updates.push(...updatesFill);
+
+      updates.push({
+        type: 'die',
+        ownerId: id,
+        data: updatesDie,
+        timestamp,
+      });
+      updates.push({
+        type: 'fill',
+        ownerId: id,
+        data: updatesFill,
+        timestamp,
+      });
     }
 
     state.updates = updates;

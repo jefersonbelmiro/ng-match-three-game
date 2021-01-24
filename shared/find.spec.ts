@@ -33,4 +33,22 @@ describe('find', () => {
       { row: 2, column: 0, type: 1 },
     ]);
   });
+
+  it('should match with zeros', () => {
+    const board = [
+      [2, 0, 0, 3, 3],
+      [3, 1, 0, 0, 1],
+      [2, 2, 0, 2, 3],
+      [3, 0, 1, 3, 2],
+      [0, 1, 3, 0, 1],
+    ];
+
+    const result = find(board);
+
+    expect(result).toStrictEqual([
+      { row: 0, column: 2, type: 0, },
+      { row: 1, column: 2, type: 0, },
+      { row: 2, column: 2, type: 0, },
+    ]);
+  });
 });

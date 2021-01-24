@@ -24,11 +24,12 @@ export interface Game {
 }
 
 export interface Update {
-  type: 'shift' | 'die' |  'new' | 'powerup';
+  type: 'shift' | 'die' |  'new' |  'fill' | 'powerup';
   ownerId?: string;
   target?: Position;
   source?: Tile;
   timestamp?: number;
+  data?: Update[];
 }
 
 export interface Command {

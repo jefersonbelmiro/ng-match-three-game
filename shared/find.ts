@@ -21,7 +21,7 @@ export function find(board: number[][], position?: { row: number, column: number
     const columns = board[row];
     for (let column = 0; column < columns.length; column++) {
       const tile = getAt({ row, column }, board);
-      const has = matches.some((item) => equal(tile, item));
+      const has = tile && matches.some((item) => equal(tile, item));
       if (!tile || has) {
         continue;
       }

@@ -1,14 +1,22 @@
 import {
   ChangeDetectorRef,
   Component,
+  NgZone,
   OnDestroy,
   OnInit,
   ViewChild,
   ViewContainerRef,
 } from '@angular/core';
 import { Router } from '@angular/router';
-import { EMPTY, forkJoin, merge, throwError } from 'rxjs';
-import { catchError, concatMap, filter, switchMap, take, tap } from 'rxjs/operators';
+import { EMPTY, forkJoin, merge, of, throwError } from 'rxjs';
+import {
+  catchError,
+  concatMap,
+  filter,
+  switchMap,
+  take,
+  tap,
+} from 'rxjs/operators';
 import { BoardService } from '../../services/board.service';
 import { ServerService } from '../../services/server.service';
 import { SpriteService } from '../../services/sprite.service';
@@ -16,7 +24,8 @@ import { StateService } from '../../services/state.service';
 import { TileService } from '../../services/tile.service';
 import { Board, Tile } from '../../shared';
 import { User } from '../../shared/firebase';
-import { Game, Player, Position, Update } from '@shared/server';
+import { Game, Player, Update } from '@shared/server';
+import { Position } from '@shared/board';
 
 @Component({
   selector: 'app-multiplayer',
@@ -41,7 +50,8 @@ export class MultiplayerComponent implements OnInit, OnDestroy {
     private state: StateService,
     private router: Router,
     private server: ServerService,
-    private cd: ChangeDetectorRef
+    private cd: ChangeDetectorRef,
+    private ngZone: NgZone
   ) {
     let size = 350;
     this.boardData = {
@@ -99,7 +109,7 @@ export class MultiplayerComponent implements OnInit, OnDestroy {
     console.log('onSwap', { source, target, payload });
   }
 
-  doSwap(source: Tile, target: Tile) {
+  doSwap(source: Position, target: Position) {
     console.log('doSwap', { source, target });
     const sourceTile = this.board.getAt(source);
     const targetTile = this.board.getAt(target);
@@ -139,7 +149,7 @@ export class MultiplayerComponent implements OnInit, OnDestroy {
       catchError((error) => {
         console.log('catchError', error);
         if (error?.name === 'TimeoutError') {
-          this.router.navigate(['/']);
+          this.ngZone.run(() => this.router.navigate(['/']));
         }
         return throwError(error);
       })
@@ -192,13 +202,13 @@ export class MultiplayerComponent implements OnInit, OnDestroy {
   }
 
   private onUpdateShift(update: Update) {
-    return this.doSwap(update.source as Tile, update.target as Tile);
+    return this.doSwap(update.source, update.target);
   }
 
   private onUpdateDie(update: Update) {
-    const dies = (update.target as Position[])
-      .map((position) => {
-        return this.board.getAt(position);
+    const dies = update.data
+      .map((update) => {
+        return this.board.getAt(update.target);
       })
       .filter((item) => !!item)
       .map((tile) => tile.die());
@@ -206,12 +216,17 @@ export class MultiplayerComponent implements OnInit, OnDestroy {
   }
 
   private onUpdateFill(update: Update) {
-    const fill = (update.target as Position[])
-      .map((position) => {
-        return this.board.getAt(position);
-      })
-      .filter((item) => !!item)
-      .map((tile) => tile.die());
+    const fill = update.data.map((update) => {
+      if (update.type === 'shift') {
+        const tile = this.board.getAt(update.source);
+        return tile.shift(update.target);
+      }
+      if (update.type === 'new') {
+        const tile = this.board.createAt(update.source, update.source.type);
+        return tile.shift(update.target);
+      }
+      return of(null);
+    });
     return forkJoin(fill);
   }
 }

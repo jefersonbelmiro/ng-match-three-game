@@ -42,7 +42,11 @@ export class BoardService {
     }
   }
 
-  createFromServer(board: Board, data: number[][], { createTile, destroyTile }) {
+  createFromServer(
+    board: Board,
+    data: number[][],
+    { createTile, destroyTile }
+  ) {
     this.data = [];
     this.rows = board.rows;
     this.columns = board.columns;
@@ -79,12 +83,15 @@ export class BoardService {
     }
   }
 
-  createAt(position: Position, type?: string) {
-    if (!type) {
+  createAt(position: Position, type?: string | number) {
+    if (type === undefined) {
       const typeIndex = this.types[
         Math.floor(Math.random() * this.types.length)
       ];
       type = monsters[typeIndex];
+    }
+    if (typeof type === 'number') {
+      type = monsters[type];
     }
     const ref = this.createTile(this, position, type);
     this.setAt(position, ref.instance);
