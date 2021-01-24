@@ -2,7 +2,14 @@ import * as admin from 'firebase-admin';
 import * as functions from 'firebase-functions';
 
 import { Game, PlayerState } from './../../shared/server';
-import { createBoard, createPool, shift } from './../../shared/board';
+import {
+  apply,
+  createBoard,
+  createPool,
+  fill,
+  matchesToUpdate,
+  shift,
+} from './../../shared/board';
 import { find } from './../../shared/find';
 
 interface ShiftPayload {
@@ -128,13 +135,13 @@ async function onShift(
     const timestamp = Date.now();
     const { source, target } = payload;
     const updates = state.updates || [];
-    const board = state.board || [];
     const pool = state.pool || [];
+    let board = state.board || [];
 
     console.group('board udpate');
     console.log('-- previous', board);
 
-    shift(source, target, board);
+    board = shift(source, target, board);
     const matches = find(board, target);
 
     console.log('-- current', board);
@@ -145,32 +152,23 @@ async function onShift(
       (player) => player.id !== state.turnId
     )?.id;
 
-    const shiftUpdate = {
+    updates.push({
       type: 'shift',
       ownerId: id,
       source,
       target,
       timestamp,
-    };
-    updates.push(shiftUpdate);
+    });
 
     if (matches?.length) {
-      updates.push({
-        type: 'die',
-        ownerId: id,
-        target: matches.map(({ row, column }) => ({ row, column })),
-        timestamp,
-      });
-      updates.push({
-        type: 'fill',
-        ownerId: id,
-        target: matches.map(({ row, column }) => ({
-          row,
-          column,
-          type: pool.shift(),
-        })),
-        timestamp,
-      });
+      const updatesDie = matchesToUpdate(matches);
+      const updatesFill = fill(board, pool);
+      // update current board
+      board = apply(updatesDie, board);
+      board = apply(updatesFill, board);
+      // story list of updates
+      updates.push(...updatesDie);
+      updates.push(...updatesFill);
     }
 
     state.updates = updates;

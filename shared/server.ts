@@ -24,9 +24,9 @@ export interface Game {
 }
 
 export interface Update {
-  type: 'shift' | 'die' | 'powerup';
-  ownerId: string;
-  target: Position | Position[];
+  type: 'shift' | 'die' |  'new' | 'powerup';
+  ownerId?: string;
+  target?: Position;
   source?: Tile;
   timestamp?: number;
 }
@@ -34,4 +34,3 @@ export interface Update {
 export interface Command {
   command: string;
 }
-

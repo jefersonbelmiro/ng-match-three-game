@@ -1,3 +1,5 @@
+import { Update } from './server';
+
 export const TYPES_INDEX = [0, 1, 2, 3];
 
 export interface Position {
@@ -57,22 +59,15 @@ export function getAt(target: Position, board: number[][]): Tile | null {
   return { ...target, type };
 }
 
-export function setAt(
-  { row, column }: Position,
-  data: number,
-  board: number[][]
-) {
+export function setAt(position: Position, data: number, board: number[][]) {
+  const { row, column } = position;
   if (!Array.isArray(board[row])) {
     board[row] = [];
   }
   board[row][column] = data;
 }
 
-export function createAt(
-  position: Position,
-  data: number,
-  board: number[][]
-) {
+export function createAt(position: Position, data: number, board: number[][]) {
   setAt(position, data, board);
   return getAt(position, board);
 }
@@ -80,8 +75,16 @@ export function createAt(
 export function shift(source: Position, target: Position, board: number[][]) {
   const sourceType = getAt(source, board)?.type ?? -1;
   const targetType = getAt(target, board)?.type ?? -1;
-  setAt(source, targetType, board);
-  setAt(target, sourceType, board);
+  const data = from(board);
+  setAt(source, targetType, data);
+  setAt(target, sourceType, data);
+  return data;
+}
+
+export function from(board: number[][]) {
+  return board.slice().map((row) => {
+    return row.slice();
+  });
 }
 
 export function createPool(length = 100) {
@@ -92,31 +95,69 @@ export function createPool(length = 100) {
   return data;
 }
 
-export function fill(board: number[][], pool: number[]) {
+export function fill(board: number[][], pool: number[]): Update[] {
   const updates = [];
-  for (let column = 0; column < board.length; column++) {
-    let shift = 0;
+  const rows = board.length;
+  const columns = board[0].length;
+  for (let column = 0; column < columns; column++) {
+    let shiftSize = 0;
     const shiftData = [];
-    const rows = board[column].length;
     for (let row = rows - 1; row >= 0; row--) {
       const tile = getAt({ row, column }, board);
       if (!tile) {
-        shiftData.push({ row: shift, column });
-        shift++;
+        shiftData.push({ row: shiftSize, column });
+        shiftSize++;
         continue;
       }
-      if (shift > 0) {
-        updates.push({ type: 'shift', row: row + shift, column });
+      if (shiftSize > 0) {
+        updates.push({
+          type: 'shift',
+          source: { row, column },
+          target: { row: row + shiftSize, column },
+        });
       }
     }
     shiftData.forEach(({ row, column }) => {
       const type = pool.shift() as number;
-      const source = createAt({ row: row - shift, column }, type, board);
       updates.push({
         type: 'new',
-        source,
-        target: { row, column }
+        source: { row: row - shiftSize, column, type },
+        target: { row, column },
       });
     });
   }
+  return updates;
+}
+
+export function equal(source: Tile, target: Tile) {
+  return Object.keys(source).every((key) => {
+    return source[key] === target[key];
+  });
+}
+
+export function matchesToUpdate(matches: Tile[]): Update[] {
+  return matches.map(({ row, column }) => {
+    return {
+      type: 'die',
+      target: { row, column },
+    };
+  });
+}
+
+export function apply(updates: Update[], board: number[][]) {
+  let data = from(board);
+
+  updates.forEach((update) => {
+    if (update.type === 'die') {
+      setAt(update.target, -1, data);
+    }
+    if (update.type === 'shift') {
+      data = shift(update.source, update.target, data);
+    }
+    if (update.type === 'new') {
+      setAt(update.target, update.source.type, data);
+    }
+  });
+
+  return data;
 }

@@ -5,6 +5,7 @@ import {
   BOARD_ROWS,
   BOARD_COLUMNS,
   getAt,
+  equal,
 } from './board';
 
 export function find(board: number[][], position?: { row: number, column: number }) {
@@ -20,7 +21,8 @@ export function find(board: number[][], position?: { row: number, column: number
     const columns = board[row];
     for (let column = 0; column < columns.length; column++) {
       const tile = getAt({ row, column }, board);
-      if (!tile || matches.includes(tile)) {
+      const has = matches.some((item) => equal(tile, item));
+      if (!tile || has) {
         continue;
       }
       matches.push(...findSameType(tile, board));
