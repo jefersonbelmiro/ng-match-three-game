@@ -54,38 +54,34 @@ export class LobbyComponent implements OnInit {
         this.cd.detectChanges();
       });
 
-    this.server.changes.game
-      .pipe(takeUntil(this.destroyed$))
-      .subscribe((game) => {
-        console.log('game changes', game);
-        this.game = game;
-        if (!game) {
-          return;
-        }
-        this.player = game.players.find(
-          (player) => player.id === this.user.uid
-        );
-        this.opponent = game.players.find(
-          (player) => player.id !== this.user.uid
-        );
+    this.server.gameReady().subscribe((game) => {
+      console.log('game changes', game);
+      this.game = game;
+      if (!game) {
+        return;
+      }
+      this.player = game.players.find((player) => player.id === this.user.uid);
+      this.opponent = game.players.find(
+        (player) => player.id !== this.user.uid
+      );
 
-        const playersReady = game.players.every((player) => player.ready);
-        if (playersReady) {
-          this.ngZone.run(() => this.router.navigate(['/multiplayer']));
-        }
+      const playersReady = game.players.every((player) => player.ready);
+      if (playersReady) {
+        this.ngZone.run(() => this.router.navigate(['/multiplayer']));
+      }
 
-        this.cd.detectChanges();
-        console.log('game players', {
-          player: this.player,
-          opponent: this.opponent,
-        });
+      this.cd.detectChanges();
+      console.log('game players', {
+        player: this.player,
+        opponent: this.opponent,
       });
+    });
   }
 
   ngOnDestroy() {
     this.destroyed$.next();
     this.destroyed$.complete();
-    if (this.playerState.matching) {
+    if (this.playerState?.matching) {
       this.server.removeCommands();
     }
   }

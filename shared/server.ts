@@ -1,9 +1,4 @@
-export const TYPES_INDEX = [0, 1, 2, 3];
-
-export interface Position {
-  row: number;
-  column: number;
-}
+import { Tile, Position } from './board';
 
 export interface Player {
   id: string;
@@ -24,14 +19,15 @@ export interface Game {
   players: Player[];
   turnId?: string;
   updates?: any[];
+  pool?: number[];
   board?: number[][];
 }
 
 export interface Update {
   type: 'shift' | 'die' | 'powerup';
   ownerId: string;
-  target: Position;
-  source?: Position;
+  target: Position | Position[];
+  source?: Tile;
   timestamp?: number;
 }
 

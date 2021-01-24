@@ -1,4 +1,9 @@
-import { TYPES_INDEX } from './server';
+export const TYPES_INDEX = [0, 1, 2, 3];
+
+export interface Position {
+  row: number;
+  column: number;
+}
 
 export const BOARD_ROWS = 5;
 export const BOARD_COLUMNS = 5;
@@ -21,10 +26,8 @@ export const MOVES = {
   below: { row: Moves.Forward, column: Moves.Idle },
 };
 
-export interface Tile {
+export interface Tile extends Position {
   type?: number;
-  row: number;
-  column: number;
 }
 
 function getRandomType() {
@@ -42,7 +45,7 @@ export function createBoard() {
   return data;
 }
 
-export function getAt(target: Tile, board: number[][]) {
+export function getAt(target: Position, board: number[][]): Tile | null {
   const { row, column } = target;
   if (!board[row]) {
     return null;
@@ -54,16 +57,66 @@ export function getAt(target: Tile, board: number[][]) {
   return { ...target, type };
 }
 
-export function setAt({ row, column }: Tile, data: number, board: number[][]) {
-  if (!board[row]) {
+export function setAt(
+  { row, column }: Position,
+  data: number,
+  board: number[][]
+) {
+  if (!Array.isArray(board[row])) {
     board[row] = [];
   }
   board[row][column] = data;
 }
 
-export function shift(source: Tile, target: Tile, board: number[][]) {
-  const sourceType = getAt(source, board)?.type || -1;
-  const targetType = getAt(target, board)?.type || -1;
+export function createAt(
+  position: Position,
+  data: number,
+  board: number[][]
+) {
+  setAt(position, data, board);
+  return getAt(position, board);
+}
+
+export function shift(source: Position, target: Position, board: number[][]) {
+  const sourceType = getAt(source, board)?.type ?? -1;
+  const targetType = getAt(target, board)?.type ?? -1;
   setAt(source, targetType, board);
   setAt(target, sourceType, board);
+}
+
+export function createPool(length = 100) {
+  const data: number[] = [];
+  for (let index = 0; index < length; index++) {
+    data[index] = getRandomType();
+  }
+  return data;
+}
+
+export function fill(board: number[][], pool: number[]) {
+  const updates = [];
+  for (let column = 0; column < board.length; column++) {
+    let shift = 0;
+    const shiftData = [];
+    const rows = board[column].length;
+    for (let row = rows - 1; row >= 0; row--) {
+      const tile = getAt({ row, column }, board);
+      if (!tile) {
+        shiftData.push({ row: shift, column });
+        shift++;
+        continue;
+      }
+      if (shift > 0) {
+        updates.push({ type: 'shift', row: row + shift, column });
+      }
+    }
+    shiftData.forEach(({ row, column }) => {
+      const type = pool.shift() as number;
+      const source = createAt({ row: row - shift, column }, type, board);
+      updates.push({
+        type: 'new',
+        source,
+        target: { row, column }
+      });
+    });
+  }
 }

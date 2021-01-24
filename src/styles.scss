@@ -30,3 +30,24 @@ img {
 [hidden] {
   display: none !important;
 }
+
+.btn {
+  font-family: "Titan One", cursive;
+  background: rgba(0, 0, 0, 0.5);
+  color: rgba(255, 255, 255, 0.7);
+  border: 0;
+  padding: 8px 15px;
+  font-size: 35px;
+  box-shadow: 3px 3px #000;
+  outline: none;
+  cursor: pointer;
+
+  &:active {
+    box-shadow: 1px 1px #000;
+    transform: translate(2px, 2px);
+  }
+
+  &:hover {
+    background: rgba(0, 0, 0, 0.7);
+  }
+}

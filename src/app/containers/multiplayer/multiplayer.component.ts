@@ -7,16 +7,8 @@ import {
   ViewContainerRef,
 } from '@angular/core';
 import { Router } from '@angular/router';
-
-import { forkJoin, merge, throwError } from 'rxjs';
-import {
-  catchError,
-  filter,
-  switchMap,
-  take,
-  tap,
-  timeout,
-} from 'rxjs/operators';
+import { EMPTY, forkJoin, merge, throwError } from 'rxjs';
+import { catchError, concatMap, filter, switchMap, take, tap } from 'rxjs/operators';
 import { BoardService } from '../../services/board.service';
 import { ServerService } from '../../services/server.service';
 import { SpriteService } from '../../services/sprite.service';
@@ -24,7 +16,7 @@ import { StateService } from '../../services/state.service';
 import { TileService } from '../../services/tile.service';
 import { Board, Tile } from '../../shared';
 import { User } from '../../shared/firebase';
-import { Game, Player } from '@shared/server';
+import { Game, Player, Position, Update } from '@shared/server';
 
 @Component({
   selector: 'app-multiplayer',
@@ -128,29 +120,8 @@ export class MultiplayerComponent implements OnInit, OnDestroy {
     );
   }
 
-  private loadBoard() {
-    return this.server.changes.board.pipe(
-      filter((data) => !!data?.length),
-      take(1),
-      timeout(1000),
-      tap((data) => {
-        console.log('board', { data });
-        // @TODO - fix in servser.service
-        this.server.refs.get('/games/{gameId}/board').unsubscribe();
-        this.createBoard(data);
-      }),
-      catchError((error) => {
-        console.log('catchError', error);
-        if (error?.name === 'TimeoutError') {
-          this.router.navigate(['/']);
-        }
-        return throwError(error);
-      })
-    );
-  }
-
   private loadGame() {
-    return this.server.changes.game.pipe(
+    return this.server.gameReady(2000).pipe(
       take(1),
       tap((game) => {
         console.log('game', { game });
@@ -164,9 +135,25 @@ export class MultiplayerComponent implements OnInit, OnDestroy {
         this.opponent = game.players.find(
           (player) => player.id !== this.user.uid
         );
+      }),
+      catchError((error) => {
+        console.log('catchError', error);
+        if (error?.name === 'TimeoutError') {
+          this.router.navigate(['/']);
+        }
+        return throwError(error);
+      })
+    );
+  }
 
-        // @TODO - fix in servser.service
-        this.server.refs.get('/games/{gameId}').unsubscribe();
+  private loadBoard() {
+    return this.server.gameReady().pipe(
+      switchMap(() => this.server.changes.board),
+      filter((data) => !!data?.length),
+      take(1),
+      tap((data) => {
+        console.log('board', { data });
+        this.createBoard(data);
       })
     );
   }
@@ -185,17 +172,46 @@ export class MultiplayerComponent implements OnInit, OnDestroy {
 
   private loadUpdates() {
     return this.server.changes.updates.pipe(
-      tap((update) => {
+      filter((update) => {
+        return update && update.ownerId !== this.player.id;
+      }),
+      concatMap((update) => {
         console.log('on update', { update });
-        if (!update) {
-          return;
+        if (update.type === 'shift') {
+          return this.onUpdateShift(update);
         }
-        if (update.ownerId === this.player.id || update.type !== 'shift') {
-          return;
+        if (update.type === 'die') {
+          return this.onUpdateDie(update);
         }
-
-        this.doSwap(update.source as Tile, update.target as Tile).subscribe();
+        if (update.type === 'fill') {
+          return this.onUpdateFill(update);
+        }
+        return EMPTY;
       })
     );
+  }
+
+  private onUpdateShift(update: Update) {
+    return this.doSwap(update.source as Tile, update.target as Tile);
+  }
+
+  private onUpdateDie(update: Update) {
+    const dies = (update.target as Position[])
+      .map((position) => {
+        return this.board.getAt(position);
+      })
+      .filter((item) => !!item)
+      .map((tile) => tile.die());
+    return forkJoin(dies);
+  }
+
+  private onUpdateFill(update: Update) {
+    const fill = (update.target as Position[])
+      .map((position) => {
+        return this.board.getAt(position);
+      })
+      .filter((item) => !!item)
+      .map((tile) => tile.die());
+    return forkJoin(fill);
   }
 }

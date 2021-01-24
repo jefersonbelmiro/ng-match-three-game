@@ -2,7 +2,7 @@ import * as admin from 'firebase-admin';
 import * as functions from 'firebase-functions';
 
 import { Game, PlayerState } from './../../shared/server';
-import { createBoard, shift } from './../../shared/board';
+import { createBoard, createPool, shift } from './../../shared/board';
 import { find } from './../../shared/find';
 
 interface ShiftPayload {
@@ -20,7 +20,6 @@ interface ShiftPayload {
 interface ReadyPayload {
   gameId: string;
 }
-// const TYPES_INDEX = [0, 1, 2, 3];
 
 // // Start writing Firebase Functions
 // // https://firebase.google.com/docs/functions/typescript
@@ -130,28 +129,55 @@ async function onShift(
     const { source, target } = payload;
     const updates = state.updates || [];
     const board = state.board || [];
-    shift(source, target, board)
+    const pool = state.pool || [];
+
+    console.group('board udpate');
+    console.log('-- previous', board);
+
+    shift(source, target, board);
     const matches = find(board, target);
 
-    console.log('matches', matches);
+    console.log('-- current', board);
+    console.log('-- matches', matches.length);
+    console.groupEnd();
 
     state.turnId = state.players.find(
       (player) => player.id !== state.turnId
     )?.id;
 
-    const update = {
+    const shiftUpdate = {
       type: 'shift',
       ownerId: id,
       source,
       target,
       timestamp,
     };
-    updates.push(update);
+    updates.push(shiftUpdate);
+
+    if (matches?.length) {
+      updates.push({
+        type: 'die',
+        ownerId: id,
+        target: matches.map(({ row, column }) => ({ row, column })),
+        timestamp,
+      });
+      updates.push({
+        type: 'fill',
+        ownerId: id,
+        target: matches.map(({ row, column }) => ({
+          row,
+          column,
+          type: pool.shift(),
+        })),
+        timestamp,
+      });
+    }
 
     state.updates = updates;
     state.board = board;
+    state.pool = pool;
 
-    console.log('onShift', { update });
+    console.log('onShift updates', updates);
 
     return state;
   });
@@ -203,10 +229,11 @@ async function createGame(
       life: 2000,
     };
   });
+  const pool = createPool();
   const turnId = playersIds[Math.floor(Math.random() * players.length)];
   const gameRef = await root.child('/games').push();
   const gameId = gameRef.key;
-  await gameRef.set({ id: gameId, players, turnId });
+  await gameRef.set({ id: gameId, players, turnId, pool });
 
   console.log('createGame', gameId, players);
 

@@ -1,16 +1,15 @@
 import { Injectable } from '@angular/core';
 import { AngularFireDatabase } from '@angular/fire/database';
+import { EMPTY, from, Observable, of, ReplaySubject, Subscriber } from 'rxjs';
 import {
-  BehaviorSubject,
-  EMPTY,
-  from,
-  Observable,
-  ReplaySubject,
-  Subscriber,
-  Subscription,
-} from 'rxjs';
-import { takeUntil } from 'rxjs/operators';
-import { Command, Game, Player, PlayerState, Update } from '@shared/server';
+  debounceTime,
+  filter,
+  shareReplay,
+  switchMap,
+  takeUntil,
+  timeout,
+} from 'rxjs/operators';
+import { Command, Game, PlayerState, Update } from '@shared/server';
 import { EventType, DataSnapshot, Reference, User } from '../shared/firebase';
 import { AuthService } from './auth.service';
 
@@ -18,12 +17,16 @@ import { AuthService } from './auth.service';
   providedIn: 'root',
 })
 export class ServerService {
-  changes = {
+  changes: {
+    user?: ReplaySubject<User>;
+    playersStates?: ReplaySubject<PlayerState>;
+    updates?: ReplaySubject<Update>;
+    game?: Observable<Game>;
+    board?: Observable<number[][]>;
+    turn?: Observable<string>;
+    pool?: Observable<number[]>;
+  } = {
     user: new ReplaySubject<User>(1),
-    game: new ReplaySubject<Game>(1),
-    players: new ReplaySubject<Player>(1),
-    board: new BehaviorSubject<number[][]>([]),
-    turn: new ReplaySubject<string>(1),
     playersStates: new ReplaySubject<PlayerState>(1),
     updates: new ReplaySubject<Update>(1),
   };
@@ -31,7 +34,6 @@ export class ServerService {
   private user: User;
   private gameId: string;
   private refCommands: Reference;
-  refs = new Map<string, Subscription>();
   private destroyed$ = new ReplaySubject(1);
 
   constructor(
@@ -55,7 +57,6 @@ export class ServerService {
   ngOnDestroy() {
     this.destroyed$.next();
     this.destroyed$.complete();
-    this.removeListeners();
   }
 
   loginAnonymously() {
@@ -129,24 +130,35 @@ export class ServerService {
     return this.firebase.database.ref(pathResolved);
   }
 
-  private listen<T = any>(
-    path: string,
-    handler: (value: T) => void,
-    type: EventType = 'value'
-  ) {
-    if (this.refs.has(path)) {
-      this.refs.get(path).unsubscribe();
+  gameReady(maxTime?: number) {
+    let stream: Observable<PlayerState> = this.changes.playersStates;
+    if (maxTime) {
+      stream = stream.pipe(timeout(maxTime));
     }
-    const subscription = this.on(path, type).subscribe(handler, (error) => {
-      console.log('error:listen', path, error);
+
+    return stream.pipe(
+      filter((state) => !!state?.gameId),
+      debounceTime(0),
+      switchMap(() => this.changes.game),
+      takeUntil(this.destroyed$)
+    );
+  }
+
+  private listen<T = any>(path: string, type: EventType = 'value') {
+    const observable = new Observable((subscriber: Subscriber<T>) => {
+      const subscription = this.on(path, type).subscribe(subscriber);
+      return () => subscription.unsubscribe();
     });
-    this.refs.set(path, subscription);
+    return observable.pipe(
+      takeUntil(this.destroyed$),
+      shareReplay({ bufferSize: 1, refCount: true })
+    );
   }
 
   private onLogin(user: User) {
     console.log('onLogin', { user });
 
-    this.listen('/players_states/{uid}', this.onPlayerStateChanges);
+    this.listen('/players_states/{uid}').subscribe(this.onPlayerStateChanges);
 
     this.refCommands = this.ref('/commands/{uid}');
 
@@ -156,33 +168,17 @@ export class ServerService {
     });
   }
 
-  private removeListeners() {
-    Object.keys(this.refs).forEach((key) => this.refs[key].unsubscribe());
-    this.refs.clear();
-  }
-
   private onPlayerStateChanges = (state: any) => {
     console.log('onPlayerStateChanges', state);
     this.changes.playersStates.next(state);
 
     if (state?.gameId && state.gameId !== this.gameId) {
       this.gameId = state.gameId;
-      this.listen('/games/{gameId}', (value) => {
-        this.changes.game.next(value);
-      });
-      this.listen('/games/{gameId}/board', (value) => {
-        this.changes.board.next(value);
-      });
-      this.listen('/games/{gameId}/turnId', (value) => {
-        this.changes.turn.next(value);
-      });
-      // this.listen(
-      //   '/games/{gameId}/updates',
-      //   (value) => {
-      //     this.changes.updates.next(value);
-      //   },
-      //   'child_added'
-      // );
+
+      this.changes.game = this.listen('/games/{gameId}');
+      this.changes.board = this.listen('/games/{gameId}/board');
+      this.changes.turn = this.listen('/games/{gameId}/turnId');
+      this.changes.pool = this.listen('/games/{gameId}/pool');
 
       this.ref('/games/{gameId}/updates')
         .orderByChild('timestamp')
