@@ -7,9 +7,10 @@ import {
   fill,
   matchesToUpdate,
   shift,
+  Tile,
 } from './../../shared/board';
 import { find } from './../../shared/find';
-import { Game, PlayerState } from './../../shared/server';
+import { Game, PlayerState, Update } from './../../shared/server';
 
 interface ShiftPayload {
   gameId: string;
@@ -126,68 +127,82 @@ async function onShift(
   root: admin.database.Reference
 ) {
   const { gameId } = payload;
-  return root.child(`/games/${gameId}`).transaction((state: Game) => {
-    if (!state) {
-      return null;
-    }
+  return root
+    .child(`/games/${gameId}`)
+    .transaction((state: Game) => {
+      if (!state) {
+        return null;
+      }
 
-    const timestamp = Date.now();
-    const { source, target } = payload;
-    const updates = state.updates || [];
-    const pool = state.pool || [];
-    let board = state.board || [];
+      const timestamp = Date.now();
+      const { source, target } = payload;
+      const updates = state.updates || [];
+      const pool = state.pool || [];
+      let board = state.board || [];
 
-    console.group('board udpate');
-    console.log('-- previous', board);
+      board = shift(source, target, board);
+      const matches = find(board);
 
-    board = shift(source, target, board);
-    const matches = find(board);
+      state.turnId = state.players.find(
+        (player) => player.id !== state.turnId
+      )?.id;
 
-    console.log('-- current', board);
-    console.log('-- matches', matches.length);
-    console.groupEnd();
+      updates.push({
+        type: 'shift',
+        ownerId: id,
+        source,
+        target,
+        timestamp,
+      });
 
-    state.turnId = state.players.find(
-      (player) => player.id !== state.turnId
-    )?.id;
+      if (matches?.length) {
+        const processMatches = processMatchesFactory(id, timestamp, pool);
+        const [boardUpdated, newUpdates] = processMatches(matches, board);
 
-    updates.push({
-      type: 'shift',
-      ownerId: id,
-      source,
-      target,
-      timestamp,
+        updates.push(...newUpdates);
+        board = boardUpdated;
+
+        let damage = 0;
+        newUpdates.forEach((item) => {
+          if (item.type === 'die') {
+            damage += item.data?.length || 1;
+          }
+        });
+        console.log('damage', damage);
+        const opponent = state.players.find(
+          (player) => player.id === state.turnId
+        );
+        if (opponent?.life) {
+          opponent.life -= damage * 10;
+        }
+        if (opponent?.life && opponent.life <= 0) {
+          state.winnerId = id;
+          state.turnId = '';
+        }
+      }
+
+      state.updates = updates;
+      state.board = board;
+
+      if (pool.length < 50) {
+        state.pool = [...pool, ...createPool(50)];
+      }
+
+      return state;
+    })
+    .then(async ({ snapshot }) => {
+      const state = snapshot.val() as Game;
+
+      if (!state?.winnerId) {
+        return Promise.resolve(state);
+      }
+
+      const updates = (state.players || []).map((player) => {
+        return root.child(`/commands/${player.id}`).remove();
+      });
+
+      return Promise.all(updates).then(() => state);
     });
-
-    if (matches?.length) {
-      const updatesDie = matchesToUpdate(matches);
-      board = apply(updatesDie, board);
-
-      const updatesFill = fill(board, pool);
-      board = apply(updatesFill, board);
-
-      updates.push({
-        type: 'die',
-        ownerId: id,
-        data: updatesDie,
-        timestamp,
-      });
-      updates.push({
-        type: 'fill',
-        ownerId: id,
-        data: updatesFill,
-        timestamp,
-      });
-    }
-
-    state.updates = updates;
-    state.board = board;
-    state.pool = pool;
-
-    console.log('onShift updates', updates);
-
-    return state;
-  });
 }
 
 async function cleanPlayerState(id: string, root: admin.database.Reference) {
@@ -213,6 +228,7 @@ async function cleanPlayerState(id: string, root: admin.database.Reference) {
         if (state.match) {
           state.match = false;
           state.matching = true;
+          state.gameId = null;
         }
         return state;
       })
@@ -233,7 +249,7 @@ async function createGame(
     return {
       id,
       ready: false,
-      life: 2000,
+      life: 1000,
     };
   });
   const pool = createPool();
@@ -251,4 +267,46 @@ async function createGame(
   });
 
   return Promise.all(updates);
+}
+
+function processMatchesFactory(
+  ownerId: string,
+  timestamp: number,
+  pool: number[]
+) {
+  return function processMatches(
+    matches: Tile[],
+    boardData: number[][]
+  ): [number[][], Update[]] {
+    const updates: Update[] = [];
+    let board = boardData;
+
+    const updatesDie = matchesToUpdate(matches);
+    board = apply(updatesDie, board);
+
+    const updatesFill = fill(board, pool);
+    board = apply(updatesFill, board);
+
+    updates.push({
+      type: 'die',
+      ownerId,
+      data: updatesDie,
+      timestamp,
+    });
+    updates.push({
+      type: 'fill',
+      ownerId,
+      data: updatesFill,
+      timestamp,
+    });
+
+    const newMatches = find(board);
+    if (newMatches.length) {
+      const [newBoardUpdated, newUpdates] = processMatches(newMatches, board);
+      board = newBoardUpdated;
+      updates.push(...newUpdates);
+    }
+
+    return [board, updates];
+  };
 }

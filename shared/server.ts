@@ -18,6 +18,7 @@ export interface Game {
   id: string;
   players: Player[];
   turnId?: string;
+  winnerId?: string;
   updates?: any[];
   pool?: number[];
   board?: number[][];

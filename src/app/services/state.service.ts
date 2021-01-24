@@ -48,6 +48,8 @@ export interface State {
   providedIn: 'root',
 })
 export class StateService extends Store<State> {
+  busyQuery = [];
+
   constructor() {
     super(initialStateFactory());
   }
@@ -62,6 +64,14 @@ export class StateService extends Store<State> {
   }
 
   isBusy() {
-    return this.getValue().busy > 0;
+    let { busy } = this.getValue();
+    if (busy === 0 && this.busyQuery.length) {
+      busy = +this.busyQuery.some((query) => query());
+    }
+    return busy > 0;
+  }
+
+  setBusyQuery(queries: (() => boolean)[]) {
+    this.busyQuery = queries;
   }
 }

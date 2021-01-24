@@ -25,6 +25,7 @@ export class ServerService {
     game?: Observable<Game>;
     board?: Observable<number[][]>;
     turn?: Observable<string>;
+    winner?: Observable<string>;
     pool?: Observable<number[]>;
   } = {
     user: new ReplaySubject<User>(1),
@@ -179,6 +180,7 @@ export class ServerService {
       this.changes.game = this.listen('/games/{gameId}');
       this.changes.board = this.listen('/games/{gameId}/board');
       this.changes.turn = this.listen('/games/{gameId}/turnId');
+      this.changes.winner = this.listen('/games/{gameId}/winnerId');
       this.changes.pool = this.listen('/games/{gameId}/pool');
 
       this.ref('/games/{gameId}/updates')

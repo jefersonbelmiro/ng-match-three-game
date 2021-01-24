@@ -8,11 +8,13 @@ import {
   ViewContainerRef,
 } from '@angular/core';
 import { Router } from '@angular/router';
-import { EMPTY, forkJoin, merge, of, throwError } from 'rxjs';
+import { EMPTY, forkJoin, merge, Observable, of, throwError } from 'rxjs';
 import {
   catchError,
   concatMap,
+  debounceTime,
   filter,
+  finalize,
   switchMap,
   take,
   tap,
@@ -26,6 +28,8 @@ import { Board, Tile } from '../../shared';
 import { User } from '../../shared/firebase';
 import { Game, Player, Update } from '@shared/server';
 import { Position } from '@shared/board';
+import { MatchService } from '../../services/match.service';
+import { EffectScoreComponent } from '../../components/effect-score/effect-score.component';
 
 @Component({
   selector: 'app-multiplayer',
@@ -51,7 +55,8 @@ export class MultiplayerComponent implements OnInit, OnDestroy {
     private router: Router,
     private server: ServerService,
     private cd: ChangeDetectorRef,
-    private ngZone: NgZone
+    private ngZone: NgZone,
+    private matches: MatchService
   ) {
     let size = 350;
     this.boardData = {
@@ -60,6 +65,14 @@ export class MultiplayerComponent implements OnInit, OnDestroy {
       width: size,
       height: size,
     };
+
+    const turnQuery = () => {
+      if (!this.turnId || !this.player?.id) {
+        return false;
+      }
+      return this.turnId !== this.player.id;
+    };
+    this.state.setBusyQuery([turnQuery]);
   }
 
   ngOnInit(): void {
@@ -68,7 +81,12 @@ export class MultiplayerComponent implements OnInit, OnDestroy {
     forkJoin([this.loadUser(), this.loadGame(), this.loadBoard()])
       .pipe(
         switchMap(() => {
-          return merge(this.loadTurn(), this.loadUpdates());
+          return merge(
+            this.loadTurn(),
+            this.loadUpdates(),
+            this.loadTypesPool(),
+            this.loadWinner()
+          );
         })
       )
       .subscribe({
@@ -103,14 +121,18 @@ export class MultiplayerComponent implements OnInit, OnDestroy {
       target: { row: target.row, column: target.column },
     };
     this.server.pushCommand(payload);
-    this.state.setBusy(true, true);
+    // this.state.setBusy(true, true);
     this.turnId = this.opponent.id;
-    this.doSwap(source, target).subscribe();
     console.log('onSwap', { source, target, payload });
+    this.doSwap(source, target).subscribe(() => {
+      const matches = this.matches.find();
+      this.processMatches(matches);
+    });
   }
 
   doSwap(source: Position, target: Position) {
     console.log('doSwap', { source, target });
+    this.state.setBusy(true);
     const sourceTile = this.board.getAt(source);
     const targetTile = this.board.getAt(target);
     const options = { fallingAnimatin: false };
@@ -118,7 +140,11 @@ export class MultiplayerComponent implements OnInit, OnDestroy {
       sourceTile.shift(target, options),
       targetTile.shift(source, options),
     ];
-    return forkJoin(shifts);
+    return forkJoin(shifts).pipe(
+      finalize(() => {
+        this.state.setBusy(false);
+      })
+    );
   }
 
   private loadUser() {
@@ -170,12 +196,35 @@ export class MultiplayerComponent implements OnInit, OnDestroy {
 
   private loadTurn() {
     return this.server.changes.turn.pipe(
+      // this.waitBusy(),
       tap((turnId) => {
         this.turnId = turnId;
         const playerTurn = this.player?.id === turnId;
         console.log('turn', turnId, playerTurn);
-        this.state.setBusy(!playerTurn, true);
+        // this.state.setBusy(!playerTurn);
         this.cd.detectChanges();
+      })
+    );
+  }
+
+  private loadWinner(): Observable<string> {
+    return this.server.changes.winner.pipe(
+      this.waitBusy(),
+      filter((id) => !!id),
+      tap((id) => {
+        const win = this.player?.id === id;
+        let text = win ? 'You win' : 'You lose';
+        alert(text);
+        this.ngZone.run(() => this.router.navigate(['/lobby']));
+      })
+    );
+  }
+
+  private loadTypesPool(): Observable<number[]> {
+    return this.server.changes.pool.pipe(
+      this.waitBusy(),
+      tap((pool) => {
+        this.board.types = pool;
       })
     );
   }
@@ -202,7 +251,8 @@ export class MultiplayerComponent implements OnInit, OnDestroy {
   }
 
   private onUpdateShift(update: Update) {
-    return this.doSwap(update.source, update.target);
+    const stream = this.doSwap(update.source, update.target);
+    return this.busyDefer(stream);
   }
 
   private onUpdateDie(update: Update) {
@@ -212,13 +262,25 @@ export class MultiplayerComponent implements OnInit, OnDestroy {
       })
       .filter((item) => !!item)
       .map((tile) => tile.die());
-    return forkJoin(dies);
+
+    const scoreValue = dies.length * 10;
+    this.createScoreEffect(update.data[0].target, scoreValue, false).subscribe(
+      () => {
+        this.player = { ...this.player, life: this.player.life - scoreValue };
+      }
+    );
+
+    return this.busyDefer(forkJoin(dies));
   }
 
   private onUpdateFill(update: Update) {
     const fill = update.data.map((update) => {
       if (update.type === 'shift') {
         const tile = this.board.getAt(update.source);
+        if (!tile) {
+          console.error('tile not found', update.source);
+          return of(null);
+        }
         return tile.shift(update.target);
       }
       if (update.type === 'new') {
@@ -227,6 +289,112 @@ export class MultiplayerComponent implements OnInit, OnDestroy {
       }
       return of(null);
     });
-    return forkJoin(fill);
+    return this.busyDefer(forkJoin(fill));
+  }
+
+  private processMatches(matches: Tile[]) {
+    if (matches.length === 0) {
+      return;
+    }
+    this.state.setBusy(true);
+    const deaths = this.updateLevel(matches);
+    forkJoin(deaths)
+      .pipe(
+        switchMap(() => this.fillBoard()),
+        finalize(() => this.state.setBusy(false))
+      )
+      .subscribe(() => {
+        this.processMatches(this.matches.find());
+      });
+  }
+
+  private updateLevel(matches: Tile[]) {
+    const deaths = [];
+    matches
+      .filter((item, index, array) => {
+        return array.indexOf(item) === index;
+      })
+      .forEach((current: Tile) => {
+        deaths.push(current.die());
+      });
+
+    const scoreValue = matches.length * 10;
+    this.createScoreEffect(matches[0], scoreValue, true).subscribe(() => {
+      this.opponent = {
+        ...this.opponent,
+        life: this.opponent.life - scoreValue,
+      };
+    });
+
+    return deaths;
+  }
+
+  private fillBoard() {
+    const data$: Observable<void>[] = [];
+    for (let column = 0; column < this.boardData.columns; column++) {
+      let shift = 0;
+      const shiftData = [];
+      for (let row = this.boardData.rows - 1; row >= 0; row--) {
+        const tile = this.board.getAt({ row, column } as Position);
+        if (!tile || !tile.alive) {
+          shiftData.push({ row: shift, column });
+          shift++;
+          continue;
+        }
+        if (shift > 0) {
+          const shift$ = tile.shift({ row: row + shift, column });
+          data$.push(shift$);
+        }
+      }
+      shiftData.forEach(({ row, column }) => {
+        const tile = this.board.createAt(
+          { row: row - shift, column },
+          this.board.types.shift()
+        );
+        const stream$ = tile.shift({ row, column });
+        data$.push(stream$);
+      });
+    }
+
+    return data$.length ? forkJoin(data$) : EMPTY;
+  }
+
+  private createScoreEffect({ row, column }, value: number, player: boolean) {
+    const ref = this.sprite.create(EffectScoreComponent);
+    const width = this.boardData.width / this.boardData.columns;
+    const height = this.boardData.height / this.boardData.rows;
+    const score = ref.instance;
+    score.value = value;
+    score.x = width * column + width / 2 - 15;
+    score.y = height * row + height / 2 - 15;
+
+    let target = { x: 290, y: -70 };
+    if (!player) {
+      target = { x: 10, y: -70 };
+    }
+
+    return score.die(target).pipe(
+      finalize(() => {
+        this.sprite.destroy(score);
+      })
+    );
+  }
+
+  private waitBusy<T = any>() {
+    return switchMap((response: T) => {
+      if (!this.state.isBusy()) {
+        return of(response);
+      }
+      return this.state.getState().pipe(
+        debounceTime(100),
+        filter(() => !this.state.isBusy()),
+        switchMap(() => of(response))
+      );
+    });
+  }
+
+  private busyDefer<T = any>(stream: Observable<T>) {
+    this.state.setBusy(true);
+    return stream.pipe(finalize(() => this.state.setBusy(false)));
   }
 }

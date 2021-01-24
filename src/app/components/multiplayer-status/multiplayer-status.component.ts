@@ -1,7 +1,7 @@
 import { Component, Input, OnChanges, SimpleChanges } from '@angular/core';
+import { Player } from '@shared/server';
 import { from, of } from 'rxjs';
 import { ServerService } from '../../services/server.service';
-import { Player } from '@shared/server';
 
 @Component({
   selector: 'app-multiplayer-status',
@@ -13,18 +13,25 @@ export class MultiplayerStatusComponent implements OnChanges {
   @Input() opponent: Player;
   @Input() turnId: string;
 
+  playerLifeCurrent: number;
+  playerLifeTimer: number;
+  opponentLifeCurrent: number;
+  opponentLifeTimer: number;
+
   constructor(private server: ServerService) {}
 
   ngOnChanges(changes: SimpleChanges) {
-    if (changes?.player && this.player) {
+    if (changes?.player && this.player && !this.player.displayName) {
       this.getDisplayName(this.player.id, 'player').subscribe((displayName) => {
         this.player.displayName = displayName;
       });
     }
-    if (changes?.opponent && this.opponent) {
-      this.getDisplayName(this.opponent.id, 'opponent').subscribe((displayName) => {
-        this.opponent.displayName = displayName;
-      });
+    if (changes?.opponent && this.opponent && !this.opponent.displayName) {
+      this.getDisplayName(this.opponent.id, 'opponent').subscribe(
+        (displayName) => {
+          this.opponent.displayName = displayName;
+        }
+      );
     }
   }
 
