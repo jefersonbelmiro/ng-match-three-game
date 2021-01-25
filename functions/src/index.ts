@@ -194,15 +194,17 @@ async function onShift(
 
 function onGameEnd(state: Game, root: admin.database.Reference) {
   const playerStates = (state.players || []).map((player) => {
-    return root.child(`/players_states/${player.id}`).transaction((state) => {
-      if (!state) {
-        return null;
-      }
-      state.match = false;
-      state.matching = false;
-      state.gameId = null;
-      return state;
-    });
+    return root
+      .child(`/players_states/${player.id}`)
+      .transaction((playerState) => {
+        if (!playerState) {
+          return null;
+        }
+        playerState.match = false;
+        playerState.matching = false;
+        playerState.gameId = null;
+        return playerState;
+      });
   });
   const commands = (state.players || []).map((player) => {
     return root.child(`/commands/${player.id}`).remove();
