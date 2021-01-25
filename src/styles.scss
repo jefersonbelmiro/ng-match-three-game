@@ -51,3 +51,12 @@ img {
     background: rgba(0, 0, 0, 0.7);
   }
 }
+
+.loader-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  color: #fff;
+  height: 100%;
+  width: 100%;
+}

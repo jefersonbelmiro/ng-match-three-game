@@ -43,7 +43,7 @@ export function playerDamage(matches: number) {
     damage += (matches - 3) * 10;
   }
   if (matches > 5) {
-    damage += (matches - 3) * 20;
+    damage += (matches - 3) * 5;
   }
   return damage;
 }

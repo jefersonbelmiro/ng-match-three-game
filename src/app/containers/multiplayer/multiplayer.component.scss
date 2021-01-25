@@ -16,3 +16,34 @@
   position: absolute;
   z-index: -1;
 }
+
+.winner-container {
+  position: absolute;
+  left: 0;
+  top: 0;
+  z-index: 200;
+  height: 100%;
+  width: 100%;
+  color: white;
+  background: rgba(0, 0, 0, 0.5);
+  .content {
+    .text {
+      font-family: "Titan One", cursive;
+      text-shadow: -1px 0 black, 0 1px black, 1px 0 black, 0 -1px black;
+      font-size: 30px;
+      margin-bottom: 10px;
+    }
+    margin: auto;
+    margin-top: 140px;
+    padding: 20px 10px;
+    display: flex;
+    height: 200px;
+    width: 300px;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+    background: rgba(0, 0, 0, 0.95);
+    border: 1px solid #ccc;
+    text-align: center;
+  }
+}

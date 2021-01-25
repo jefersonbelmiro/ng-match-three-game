@@ -176,6 +176,7 @@ async function onShift(
       if (opponent?.life !== undefined && opponent.life <= 0) {
         state.winnerId = id;
         state.turnId = '';
+        setTimeout(() => onGameEnd(state, root), 1500);
       }
     }
 
@@ -191,12 +192,25 @@ async function onShift(
   });
 }
 
-// function onGameEnd(state: Game, root: admin.database.Reference) {
-//   const updates = (state.players || []).map((player) => {
-//     return root.child(`/commands/${player.id}`).remove();
-//   });
-//   return Promise.all(updates);
-// }
+function onGameEnd(state: Game, root: admin.database.Reference) {
+  const playerStates = (state.players || []).map((player) => {
+    return root.child(`/players_states/${player.id}`).transaction((state) => {
+      if (!state) {
+        return null;
+      }
+      state.match = false;
+      state.matching = false;
+      state.gameId = null;
+      return state;
+    });
+  });
+  const commands = (state.players || []).map((player) => {
+    return root.child(`/commands/${player.id}`).remove();
+  });
+  const game = root.child(`/games/${state.id}`).remove();
+  const updates = playerStates.concat(commands).concat(game);
+  return Promise.all(updates);
+}
 
 async function cleanPlayerState(id: string, root: admin.database.Reference) {
   const playerState = (

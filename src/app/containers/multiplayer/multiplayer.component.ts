@@ -46,7 +46,7 @@ import { EffectScoreComponent } from '../../components/effect-score/effect-score
   styleUrls: ['./multiplayer.component.scss'],
 })
 export class MultiplayerComponent implements OnInit, OnDestroy {
-  @ViewChild('container', { read: ViewContainerRef, static: true })
+  @ViewChild('container', { read: ViewContainerRef })
   container: ViewContainerRef;
 
   user: User;
@@ -55,6 +55,9 @@ export class MultiplayerComponent implements OnInit, OnDestroy {
   player: Player;
   opponent: Player;
   turnId: string;
+  loading: boolean;
+
+  winnerText: string;
 
   destroyed$ = new ReplaySubject(1);
 
@@ -87,8 +90,6 @@ export class MultiplayerComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
-    this.sprite.setContainer(this.container);
-
     forkJoin([this.loadUser(), this.loadGame(), this.loadBoard()])
       .pipe(
         switchMap(() => {
@@ -200,13 +201,20 @@ export class MultiplayerComponent implements OnInit, OnDestroy {
   }
 
   private loadBoard() {
+    this.loading = true;
     return this.server.gameReady().pipe(
       switchMap(() => this.server.changes.board),
       filter((data) => !!data?.length),
       take(1),
+      finalize(() => {
+        this.loading = false;
+      }),
       tap((data) => {
         console.log('board', { data });
-        this.createBoard(data);
+        setTimeout(() => {
+          this.sprite.setContainer(this.container);
+          this.createBoard(data);
+        });
       })
     );
   }
@@ -230,11 +238,10 @@ export class MultiplayerComponent implements OnInit, OnDestroy {
       filter((id) => !!id),
       tap((id) => {
         const win = this.player?.id === id;
-        let text = win ? 'You win' : 'You lose';
-        this.server.removeCommands().subscribe(() => {
-          this.ngZone.run(() => this.router.navigate(['/lobby']));
-        });
-        alert(text);
+        this.winnerText = win ? 'You win' : 'You lose';
+        // this.ngZone.run(() => this.router.navigate(['/lobby']));
+        // this.server.removeCommands().subscribe(() => {
+        // });
       })
     );
   }
@@ -266,7 +273,7 @@ export class MultiplayerComponent implements OnInit, OnDestroy {
         }
         return EMPTY;
       }),
-      takeUntil(this.destroyed$),
+      takeUntil(this.destroyed$)
     );
   }
 
