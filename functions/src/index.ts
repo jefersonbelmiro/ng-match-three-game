@@ -10,7 +10,13 @@ import {
   Tile,
 } from './../../shared/board';
 import { find } from './../../shared/find';
-import { Game, PlayerState, Update } from './../../shared/server';
+import {
+  Game,
+  Player,
+  playerDamage,
+  PlayerState,
+  Update,
+} from './../../shared/server';
 
 interface ShiftPayload {
   gameId: string;
@@ -127,83 +133,76 @@ async function onShift(
   root: admin.database.Reference
 ) {
   const { gameId } = payload;
-  return root
-    .child(`/games/${gameId}`)
-    .transaction((state: Game) => {
-      if (!state) {
-        return null;
-      }
+  return root.child(`/games/${gameId}`).transaction((state: Game) => {
+    if (!state) {
+      return null;
+    }
 
-      const timestamp = Date.now();
-      const { source, target } = payload;
-      const updates = state.updates || [];
-      const pool = state.pool || [];
-      let board = state.board || [];
+    const timestamp = Date.now();
+    const { source, target } = payload;
+    const updates = state.updates || [];
+    const pool = state.pool || [];
+    let board = state.board || [];
 
-      board = shift(source, target, board);
-      const matches = find(board);
+    board = shift(source, target, board);
+    const matches = find(board);
 
-      state.turnId = state.players.find(
-        (player) => player.id !== state.turnId
-      )?.id;
+    state.turnId = state.players.find(
+      (player) => player.id !== state.turnId
+    )?.id;
 
-      updates.push({
-        type: 'shift',
-        ownerId: id,
-        source,
-        target,
-        timestamp,
-      });
-
-      if (matches?.length) {
-        const processMatches = processMatchesFactory(id, timestamp, pool);
-        const [boardUpdated, newUpdates] = processMatches(matches, board);
-
-        updates.push(...newUpdates);
-        board = boardUpdated;
-
-        let damage = 0;
-        newUpdates.forEach((item) => {
-          if (item.type === 'die') {
-            damage += item.data?.length || 1;
-          }
-        });
-        console.log('damage', damage);
-        const opponent = state.players.find(
-          (player) => player.id === state.turnId
-        );
-        if (opponent?.life) {
-          opponent.life -= damage * 10;
-        }
-        if (opponent?.life && opponent.life <= 0) {
-          state.winnerId = id;
-          state.turnId = '';
-        }
-      }
-
-      state.updates = updates;
-      state.board = board;
-
-      if (pool.length < 50) {
-        state.pool = [...pool, ...createPool(50)];
-      }
-
-      return state;
-    })
-    .then(async ({ snapshot }) => {
-      const state = snapshot.val() as Game;
-
-      if (!state?.winnerId) {
-        return Promise.resolve(state);
-      }
-
-      const updates = (state.players || []).map((player) => {
-        return root.child(`/commands/${player.id}`).remove();
-      });
-
-      return Promise.all(updates).then(() => state);
+    updates.push({
+      type: 'shift',
+      ownerId: id,
+      source,
+      target,
+      timestamp,
     });
+
+    if (matches?.length) {
+      const processMatches = processMatchesFactory(id, timestamp, pool);
+      const [boardUpdated, newUpdates] = processMatches(matches, board);
+
+      updates.push(...newUpdates);
+      board = boardUpdated;
+
+      let damage = 0;
+      newUpdates.forEach((item) => {
+        if (item.type === 'die') {
+          damage += item.data?.length || 1;
+        }
+      });
+      console.log('damage', damage);
+      const opponent = state.players.find(
+        (player) => player.id === state.turnId
+      );
+      if (opponent?.life) {
+        opponent.life -= playerDamage(damage);
+      }
+      if (opponent?.life !== undefined && opponent.life <= 0) {
+        state.winnerId = id;
+        state.turnId = '';
+      }
+    }
+
+    state.updates = updates;
+    state.board = board;
+    state.players = state.players;
+
+    if (pool.length < 50) {
+      state.pool = [...pool, ...createPool(50)];
+    }
+
+    return state;
+  });
 }
+
+// function onGameEnd(state: Game, root: admin.database.Reference) {
+//   const updates = (state.players || []).map((player) => {
+//     return root.child(`/commands/${player.id}`).remove();
+//   });
+//   return Promise.all(updates);
+// }
 
 async function cleanPlayerState(id: string, root: admin.database.Reference) {
   const playerState = (
@@ -249,7 +248,7 @@ async function createGame(
     return {
       id,
       ready: false,
-      life: 1000,
+      life: 100,
     };
   });
   const pool = createPool();

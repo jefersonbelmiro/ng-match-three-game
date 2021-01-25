@@ -8,7 +8,15 @@ import {
   ViewContainerRef,
 } from '@angular/core';
 import { Router } from '@angular/router';
-import { EMPTY, forkJoin, merge, Observable, of, throwError } from 'rxjs';
+import {
+  EMPTY,
+  forkJoin,
+  merge,
+  Observable,
+  of,
+  ReplaySubject,
+  throwError,
+} from 'rxjs';
 import {
   catchError,
   concatMap,
@@ -17,6 +25,7 @@ import {
   finalize,
   switchMap,
   take,
+  takeUntil,
   tap,
 } from 'rxjs/operators';
 import { BoardService } from '../../services/board.service';
@@ -26,7 +35,7 @@ import { StateService } from '../../services/state.service';
 import { TileService } from '../../services/tile.service';
 import { Board, Tile } from '../../shared';
 import { User } from '../../shared/firebase';
-import { Game, Player, Update } from '@shared/server';
+import { Game, Player, playerDamage, Update } from '@shared/server';
 import { Position } from '@shared/board';
 import { MatchService } from '../../services/match.service';
 import { EffectScoreComponent } from '../../components/effect-score/effect-score.component';
@@ -46,6 +55,8 @@ export class MultiplayerComponent implements OnInit, OnDestroy {
   player: Player;
   opponent: Player;
   turnId: string;
+
+  destroyed$ = new ReplaySubject(1);
 
   constructor(
     private tileBuilder: TileService,
@@ -87,14 +98,20 @@ export class MultiplayerComponent implements OnInit, OnDestroy {
             this.loadTypesPool(),
             this.loadWinner()
           );
-        })
+        }),
+        takeUntil(this.destroyed$)
       )
       .subscribe({
         error: (error) => console.log('error', error),
       });
   }
 
-  ngOnDestroy() {}
+  ngOnDestroy() {
+    this.destroyed$.next();
+    this.destroyed$.complete();
+    this.sprite.pool.clear();
+    this.state.setBusyQuery([]);
+  }
 
   createBoard(data: number[][]) {
     const createTile = this.tileBuilder.createFactory();
@@ -214,8 +231,10 @@ export class MultiplayerComponent implements OnInit, OnDestroy {
       tap((id) => {
         const win = this.player?.id === id;
         let text = win ? 'You win' : 'You lose';
+        this.server.removeCommands().subscribe(() => {
+          this.ngZone.run(() => this.router.navigate(['/lobby']));
+        });
         alert(text);
-        this.ngZone.run(() => this.router.navigate(['/lobby']));
       })
     );
   }
@@ -246,7 +265,8 @@ export class MultiplayerComponent implements OnInit, OnDestroy {
           return this.onUpdateFill(update);
         }
         return EMPTY;
-      })
+      }),
+      takeUntil(this.destroyed$),
     );
   }
 
@@ -263,7 +283,7 @@ export class MultiplayerComponent implements OnInit, OnDestroy {
       .filter((item) => !!item)
       .map((tile) => tile.die());
 
-    const scoreValue = dies.length * 10;
+    const scoreValue = playerDamage(dies.length);
     this.createScoreEffect(update.data[0].target, scoreValue, false).subscribe(
       () => {
         this.player = { ...this.player, life: this.player.life - scoreValue };
@@ -318,7 +338,7 @@ export class MultiplayerComponent implements OnInit, OnDestroy {
         deaths.push(current.die());
       });
 
-    const scoreValue = matches.length * 10;
+    const scoreValue = playerDamage(matches.length);
     this.createScoreEffect(matches[0], scoreValue, true).subscribe(() => {
       this.opponent = {
         ...this.opponent,

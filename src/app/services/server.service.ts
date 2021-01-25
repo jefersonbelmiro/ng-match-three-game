@@ -1,17 +1,22 @@
 import { Injectable } from '@angular/core';
 import { AngularFireDatabase } from '@angular/fire/database';
-import { EMPTY, from, Observable, of, ReplaySubject, Subscriber } from 'rxjs';
+import { Command, Game, PlayerState, Update } from '@shared/server';
+import { EMPTY, from, Observable, ReplaySubject, Subscriber } from 'rxjs';
 import {
   debounceTime,
   filter,
   shareReplay,
   switchMap,
-  take,
   takeUntil,
   timeout,
 } from 'rxjs/operators';
-import { Command, Game, PlayerState, Update } from '@shared/server';
-import { EventType, DataSnapshot, Reference, User } from '../shared/firebase';
+import {
+  DataSnapshot,
+  EventType,
+  Reference,
+  User,
+  Query,
+} from '../shared/firebase';
 import { AuthService } from './auth.service';
 
 @Injectable({
@@ -21,7 +26,7 @@ export class ServerService {
   changes: {
     user?: ReplaySubject<User>;
     playersStates?: ReplaySubject<PlayerState>;
-    updates?: ReplaySubject<Update>;
+    updates?: Observable<Update>;
     game?: Observable<Game>;
     board?: Observable<number[][]>;
     turn?: Observable<string>;
@@ -30,7 +35,6 @@ export class ServerService {
   } = {
     user: new ReplaySubject<User>(1),
     playersStates: new ReplaySubject<PlayerState>(1),
-    updates: new ReplaySubject<Update>(1),
   };
 
   private user: User;
@@ -97,7 +101,11 @@ export class ServerService {
     return EMPTY;
   }
 
-  on(path: string, type: EventType = 'value') {
+  on(
+    path: string,
+    type: EventType = 'value',
+    query?: (ref: Reference) => Query
+  ) {
     return new Observable((subscriber: Subscriber<any>) => {
       const onValue = (snapshot: DataSnapshot) => {
         subscriber.next(snapshot.val());
@@ -105,7 +113,10 @@ export class ServerService {
       const onError = (error: Error) => {
         subscriber.error(error);
       };
-      const ref = this.ref(path);
+      let ref: Reference | Query = this.ref(path);
+      if (query) {
+        ref = query(ref as Reference);
+      }
       ref.on(type, onValue, onError);
       return () => {
         console.log('OFF', path);
@@ -146,9 +157,13 @@ export class ServerService {
     );
   }
 
-  private listen<T = any>(path: string, type: EventType = 'value') {
+  private listen<T = any>(
+    path: string,
+    type: EventType = 'value',
+    query?: (ref: Reference) => Query
+  ) {
     const observable = new Observable((subscriber: Subscriber<T>) => {
-      const subscription = this.on(path, type).subscribe(subscriber);
+      const subscription = this.on(path, type, query).subscribe(subscriber);
       return () => subscription.unsubscribe();
     });
     return observable.pipe(
@@ -183,12 +198,20 @@ export class ServerService {
       this.changes.winner = this.listen('/games/{gameId}/winnerId');
       this.changes.pool = this.listen('/games/{gameId}/pool');
 
-      this.ref('/games/{gameId}/updates')
-        .orderByChild('timestamp')
-        .startAt(Date.now())
-        .on('child_added', (snapshot) => {
-          this.changes.updates.next(snapshot.val());
-        });
+      this.changes.updates = this.listen(
+        '/games/{gameId}/updates',
+        'child_added',
+        (ref: Reference) => {
+          return ref.orderByChild('timestamp').startAt(Date.now());
+        }
+      );
+
+      // this.ref('/games/{gameId}/updates')
+      //   .orderByChild('timestamp')
+      //   .startAt(Date.now())
+      //   .on('child_added', (snapshot) => {
+      //     this.changes.updates.next(snapshot.val());
+      //   });
     }
   };
 

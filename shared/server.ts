@@ -25,7 +25,7 @@ export interface Game {
 }
 
 export interface Update {
-  type: 'shift' | 'die' |  'new' |  'fill' | 'powerup';
+  type: 'shift' | 'die' | 'new' | 'fill' | 'powerup';
   ownerId?: string;
   target?: Position;
   source?: Tile;
@@ -35,4 +35,15 @@ export interface Update {
 
 export interface Command {
   command: string;
+}
+
+export function playerDamage(matches: number) {
+  let damage = matches * 10;
+  if (matches > 3) {
+    damage += (matches - 3) * 10;
+  }
+  if (matches > 5) {
+    damage += (matches - 3) * 20;
+  }
+  return damage;
 }
