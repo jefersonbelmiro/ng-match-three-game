@@ -242,7 +242,7 @@ async function createGame(
     return {
       id,
       ready: false,
-      life: 100,
+      life: 500,
     };
   });
   const pool = createPool();
