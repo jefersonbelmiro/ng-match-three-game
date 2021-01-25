@@ -10,13 +10,7 @@ import {
   Tile,
 } from './../../shared/board';
 import { find } from './../../shared/find';
-import {
-  Game,
-  Player,
-  playerDamage,
-  PlayerState,
-  Update,
-} from './../../shared/server';
+import { Game, playerDamage, PlayerState, Update } from './../../shared/server';
 
 interface ShiftPayload {
   gameId: string;
