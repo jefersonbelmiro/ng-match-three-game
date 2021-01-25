@@ -97,12 +97,10 @@ export function createPool(length = 100) {
 
 export function fill(board: number[][], pool: number[]): Update[] {
   const updates = [];
-  const rows = board.length;
-  const columns = board[0].length;
-  for (let column = 0; column < columns; column++) {
+  for (let column = 0; column < BOARD_COLUMNS; column++) {
     let shiftSize = 0;
     const shiftData = [];
-    for (let row = rows - 1; row >= 0; row--) {
+    for (let row = BOARD_ROWS - 1; row >= 0; row--) {
       const tile = getAt({ row, column }, board);
       if (!tile) {
         shiftData.push({ row: shiftSize, column });
