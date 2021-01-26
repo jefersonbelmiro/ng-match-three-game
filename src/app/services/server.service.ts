@@ -92,15 +92,6 @@ export class ServerService {
     return from(this.refCommands.push(payload));
   }
 
-  removeCommands() {
-    const uid = this.user?.uid;
-    console.log('removeCommands', `/commands/${uid}`);
-    if (uid) {
-      return from(this.ref(`/commands/${uid}`).remove());
-    }
-    return EMPTY;
-  }
-
   on(
     path: string,
     type: EventType = 'value',

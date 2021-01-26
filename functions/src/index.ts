@@ -1,16 +1,13 @@
 import * as admin from 'firebase-admin';
 import * as functions from 'firebase-functions';
-import {
-  apply,
-  createBoard,
-  createPool,
-  fill,
-  matchesToUpdate,
-  shift,
-  Tile,
-} from './../../shared/board';
+import { createBoard, createPool, shift } from './../../shared/board';
 import { find } from './../../shared/find';
-import { Game, playerDamage, PlayerState, Update } from './../../shared/server';
+import {
+  Game,
+  playerDamage,
+  PlayerState,
+  processMatchesFactory,
+} from './../../shared/server';
 
 interface ShiftPayload {
   gameId: string;
@@ -28,33 +25,14 @@ interface ReadyPayload {
   gameId: string;
 }
 
-// // Start writing Firebase Functions
-// // https://firebase.google.com/docs/functions/typescript
-//
-// export const helloWorld = functions.https.onRequest((request, response) => {
-//   functions.logger.info('Hello logs[3]!', { structuredData: true });
-//   response.send('Hello from Firebase[3.1]!');
-// });
-
-export const OnWriteCommand = functions.database
+export const OnCreateCommand = functions.database
   .ref('/commands/{id}/{cmd_id}')
-  .onWrite((change, context) => {
+  .onCreate((snapshot, context) => {
     const id = context.params.id;
     const cmd_id = context.params.cmd_id;
-    const root = change.after.ref.root;
+    const root = snapshot.ref.root;
 
-    // Exit when the data is deleted.
-    if (!change.after.exists()) {
-      const beforeValue = change.before.val();
-      console.log(`command was deleted ${cmd_id}`, beforeValue);
-      // remove player state
-      if (beforeValue?.command === 'match') {
-        return cleanPlayerState(id, root);
-      }
-      return null;
-    }
-
-    const value = change.after.val();
+    const value = snapshot.val();
     const command = value.command;
 
     console.log('command', { id, cmd_id, command_value: value });
@@ -63,14 +41,136 @@ export const OnWriteCommand = functions.database
     switch (command) {
       case 'match':
         return onMatch(id, root);
+      case 'cancelMatch':
+        return onCancelMatch(id, root);
       case 'ready':
         return onReady(id, value, root);
       case 'shift':
         return onShift(id, value, root);
+      case 'exit':
+        return onExit(id, root);
+      case 'gameEnd':
+        return onGameEnd(id, root);
     }
 
     return null;
   });
+
+async function onGameEnd(id: string, root: admin.database.Reference) {
+  const playerState = (
+    await root.child(`/players_states/${id}`).once('value')
+  )?.val() as PlayerState;
+
+  const updates = [];
+  if (playerState?.gameId) {
+    const game = (
+      await root.child(`/games/${playerState.gameId}`).once('value')
+    ).val();
+    const opponent = game.players.find(
+      (player: { id: string }) => player.id !== id
+    );
+
+    const opponentState = (
+      await root.child(`/players_states/${opponent.id}`).once('value')
+    )?.val() as PlayerState;
+
+    if (!opponentState?.gameId) {
+      // remove game
+      updates.push(root.child(`/games/${playerState.gameId}`).remove());
+    }
+  }
+
+  updates.push(
+    root.child(`/players_states/${id}`).transaction((state) => {
+      if (!state) {
+        return null;
+      }
+      state.match = false;
+      state.matching = false;
+      state.gameId = null;
+      return state;
+    })
+  );
+
+  updates.push(root.child(`/players_states/${id}`).remove());
+  updates.push(root.child(`/commands/${id}`).remove());
+  return Promise.all(updates);
+}
+
+async function onExit(id: string, root: admin.database.Reference) {
+  const playerState = (
+    await root.child(`/players_states/${id}`).once('value')
+  )?.val() as PlayerState;
+
+  const updates = [];
+  if (playerState?.gameId) {
+    const game = (
+      await root.child(`/games/${playerState.gameId}`).once('value')
+    ).val();
+    const opponent = game.players.find(
+      (player: { id: string }) => player.id !== id
+    );
+
+    // set opponent to matching again
+    updates.push(
+      root.child(`/players_states/${opponent.id}`).transaction((state) => {
+        if (!state || state.match === false) {
+          return null;
+        }
+        if (state.match) {
+          state.match = false;
+          state.matching = true;
+          state.gameId = null;
+          return state;
+        }
+        return null;
+      })
+    );
+
+    // remove game
+    updates.push(root.child(`/games/${playerState.gameId}`).remove());
+  }
+  updates.push(root.child(`/players_states/${id}`).remove());
+  updates.push(root.child(`/commands/${id}`).remove());
+  return Promise.all(updates);
+}
+
+async function onCancelMatch(id: string, root: admin.database.Reference) {
+  const playerState = (
+    await root.child(`/players_states/${id}`).once('value')
+  )?.val() as PlayerState;
+
+  const updates = [];
+  if (playerState?.gameId) {
+    const game = (
+      await root.child(`/games/${playerState.gameId}`).once('value')
+    ).val();
+    const opponent = game.players.find(
+      (player: { id: string }) => player.id !== id
+    );
+
+    // set opponent to matching again
+    updates.push(
+      root.child(`/players_states/${opponent.id}`).transaction((state) => {
+        if (!state) {
+          return null;
+        }
+        if (state.match) {
+          state.match = false;
+          state.matching = true;
+          state.gameId = null;
+        }
+        return state;
+      })
+    );
+
+    // remove game
+    updates.push(root.child(`/games/${playerState.gameId}`).remove());
+  }
+  updates.push(root.child(`/players_states/${id}`).remove());
+  updates.push(root.child(`/commands/${id}`).remove());
+  return Promise.all(updates);
+}
 
 async function onMatch(id: string, root: admin.database.Reference) {
   await root.child(`players_states/${id}`).set({ matching: true });
@@ -154,8 +254,13 @@ async function onShift(
     });
 
     if (matches?.length) {
-      const processMatches = processMatchesFactory(id, timestamp, pool);
-      const [boardUpdated, newUpdates] = processMatches(matches, board);
+      const processMatches = processMatchesFactory(board, pool, {
+        ownerId: id,
+        timestamp,
+      });
+      const { board: boardUpdated, updates: newUpdates } = processMatches(
+        matches
+      );
 
       updates.push(...newUpdates);
       board = boardUpdated;
@@ -163,21 +268,25 @@ async function onShift(
       let damage = 0;
       newUpdates.forEach((item) => {
         if (item.type === 'die') {
-          damage += item.data?.length || 1;
+          damage += playerDamage(item.data?.length || 0);
         }
       });
-      console.log('damage', damage);
       const opponent = state.players.find(
         (player) => player.id === state.turnId
       );
       if (opponent?.life) {
-        opponent.life -= playerDamage(damage);
+        opponent.life -= damage;
       }
       if (opponent?.life !== undefined && opponent.life <= 0) {
+        opponent.life = 0;
         state.winnerId = id;
         state.turnId = '';
-        setTimeout(() => onGameEnd(state, root), 1500);
       }
+      console.log('damage', {
+        damage,
+        opponentLife: opponent?.life,
+        winnerId: state.winnerId,
+      });
     }
 
     state.updates = updates;
@@ -192,64 +301,6 @@ async function onShift(
   });
 }
 
-function onGameEnd(state: Game, root: admin.database.Reference) {
-  const playerStates = (state.players || []).map((player) => {
-    return root
-      .child(`/players_states/${player.id}`)
-      .transaction((playerState) => {
-        if (!playerState) {
-          return null;
-        }
-        playerState.match = false;
-        playerState.matching = false;
-        playerState.gameId = null;
-        return playerState;
-      });
-  });
-  const commands = (state.players || []).map((player) => {
-    return root.child(`/commands/${player.id}`).remove();
-  });
-  const game = root.child(`/games/${state.id}`).remove();
-  const updates = playerStates.concat(commands).concat(game);
-  return Promise.all(updates);
-}
-
-async function cleanPlayerState(id: string, root: admin.database.Reference) {
-  const playerState = (
-    await root.child(`/players_states/${id}`).once('value')
-  )?.val() as PlayerState;
-
-  const updates = [];
-  if (playerState?.gameId) {
-    const game = (
-      await root.child(`/games/${playerState.gameId}`).once('value')
-    ).val();
-    const opponent = game.players.find(
-      (player: { id: string }) => player.id !== id
-    );
-
-    // set opponent to matching again
-    updates.push(
-      root.child(`/players_states/${opponent.id}`).transaction((state) => {
-        if (!state) {
-          return null;
-        }
-        if (state.match) {
-          state.match = false;
-          state.matching = true;
-          state.gameId = null;
-        }
-        return state;
-      })
-    );
-
-    // remove game
-    updates.push(root.child(`/games/${playerState.gameId}`).remove());
-  }
-  updates.push(root.child(`/players_states/${id}`).remove());
-  return Promise.all(updates);
-}
-
 async function createGame(
   playersIds: string[],
   root: admin.database.Reference
@@ -258,7 +309,7 @@ async function createGame(
     return {
       id,
       ready: false,
-      life: 500,
+      life: 666,
     };
   });
   const pool = createPool();
@@ -276,46 +327,4 @@ async function createGame(
   });
 
   return Promise.all(updates);
-}
-
-function processMatchesFactory(
-  ownerId: string,
-  timestamp: number,
-  pool: number[]
-) {
-  return function processMatches(
-    matches: Tile[],
-    boardData: number[][]
-  ): [number[][], Update[]] {
-    const updates: Update[] = [];
-    let board = boardData;
-
-    const updatesDie = matchesToUpdate(matches);
-    board = apply(updatesDie, board);
-
-    const updatesFill = fill(board, pool);
-    board = apply(updatesFill, board);
-
-    updates.push({
-      type: 'die',
-      ownerId,
-      data: updatesDie,
-      timestamp,
-    });
-    updates.push({
-      type: 'fill',
-      ownerId,
-      data: updatesFill,
-      timestamp,
-    });
-
-    const newMatches = find(board);
-    if (newMatches.length) {
-      const [newBoardUpdated, newUpdates] = processMatches(newMatches, board);
-      board = newBoardUpdated;
-      updates.push(...newUpdates);
-    }
-
-    return [board, updates];
-  };
 }

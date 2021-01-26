@@ -11,6 +11,7 @@ import { Router } from '@angular/router';
 import {
   EMPTY,
   forkJoin,
+  from,
   merge,
   Observable,
   of,
@@ -35,10 +36,17 @@ import { StateService } from '../../services/state.service';
 import { TileService } from '../../services/tile.service';
 import { Board, Tile } from '../../shared';
 import { User } from '../../shared/firebase';
-import { Game, Player, playerDamage, Update } from '@shared/server';
+import {
+  Game,
+  Player,
+  playerDamage,
+  processMatchesFactory,
+  Update,
+} from '@shared/server';
 import { Position } from '@shared/board';
 import { MatchService } from '../../services/match.service';
 import { EffectScoreComponent } from '../../components/effect-score/effect-score.component';
+import { find } from '@shared/find';
 
 @Component({
   selector: 'app-multiplayer',
@@ -143,8 +151,9 @@ export class MultiplayerComponent implements OnInit, OnDestroy {
     this.turnId = this.opponent.id;
     console.log('onSwap', { source, target, payload });
     this.doSwap(source, target).subscribe(() => {
-      const matches = this.matches.find();
-      this.processMatches(matches);
+      // const matches = this.matches.find();
+      // this.processMatches(matches);
+      this.processMatches().subscribe();
     });
   }
 
@@ -210,6 +219,7 @@ export class MultiplayerComponent implements OnInit, OnDestroy {
         this.loading = false;
       }),
       tap((data) => {
+        this.loading = false;
         console.log('board', { data });
         setTimeout(() => {
           this.sprite.setContainer(this.container);
@@ -226,7 +236,6 @@ export class MultiplayerComponent implements OnInit, OnDestroy {
         this.turnId = turnId;
         const playerTurn = this.player?.id === turnId;
         console.log('turn', turnId, playerTurn);
-        // this.state.setBusy(!playerTurn);
         this.cd.detectChanges();
       })
     );
@@ -239,9 +248,8 @@ export class MultiplayerComponent implements OnInit, OnDestroy {
       tap((id) => {
         const win = this.player?.id === id;
         this.winnerText = win ? 'You win' : 'You lose';
-        // this.ngZone.run(() => this.router.navigate(['/lobby']));
-        // this.server.removeCommands().subscribe(() => {
-        // });
+        this.cd.detectChanges();
+        this.server.pushCommand({ command: 'gameEnd' });
       })
     );
   }
@@ -260,19 +268,7 @@ export class MultiplayerComponent implements OnInit, OnDestroy {
       filter((update) => {
         return update && update.ownerId !== this.player.id;
       }),
-      concatMap((update) => {
-        console.log('on update', { update });
-        if (update.type === 'shift') {
-          return this.onUpdateShift(update);
-        }
-        if (update.type === 'die') {
-          return this.onUpdateDie(update);
-        }
-        if (update.type === 'fill') {
-          return this.onUpdateFill(update);
-        }
-        return EMPTY;
-      }),
+      this.updateMap({ isPlayer: false }),
       takeUntil(this.destroyed$)
     );
   }
@@ -282,7 +278,7 @@ export class MultiplayerComponent implements OnInit, OnDestroy {
     return this.busyDefer(stream);
   }
 
-  private onUpdateDie(update: Update) {
+  private onUpdateDie(update: Update, options: { isPlayer: boolean }) {
     const dies = update.data
       .map((update) => {
         return this.board.getAt(update.target);
@@ -291,11 +287,22 @@ export class MultiplayerComponent implements OnInit, OnDestroy {
       .map((tile) => tile.die());
 
     const scoreValue = playerDamage(dies.length);
-    this.createScoreEffect(update.data[0].target, scoreValue, false).subscribe(
-      () => {
-        this.player = { ...this.player, life: this.player.life - scoreValue };
+    this.createScoreEffect(
+      update.data[0].target,
+      scoreValue,
+      options.isPlayer
+    ).subscribe(() => {
+      let current = options.isPlayer ? this.opponent : this.player;
+      let life = current.life - scoreValue;
+      if (life < 0) {
+        life = 0;
       }
-    );
+      if (options.isPlayer) {
+        this.opponent = { ...current, life };
+      } else {
+        this.player = { ...current, life };
+      }
+    });
 
     return this.busyDefer(forkJoin(dies));
   }
@@ -319,74 +326,36 @@ export class MultiplayerComponent implements OnInit, OnDestroy {
     return this.busyDefer(forkJoin(fill));
   }
 
-  private processMatches(matches: Tile[]) {
-    if (matches.length === 0) {
-      return;
+  private processMatches() {
+    const board = this.board.getData();
+    const matches = find(board);
+    if (!matches.length) {
+      return EMPTY;
     }
-    this.state.setBusy(true);
-    const deaths = this.updateLevel(matches);
-    forkJoin(deaths)
-      .pipe(
-        switchMap(() => this.fillBoard()),
-        finalize(() => this.state.setBusy(false))
-      )
-      .subscribe(() => {
-        this.processMatches(this.matches.find());
-      });
+
+    const pool = this.board.types;
+    const processMatches = processMatchesFactory(board, pool);
+    const { updates } = processMatches(matches);
+
+    return from(updates).pipe(this.updateMap({ isPlayer: true }));
   }
 
-  private updateLevel(matches: Tile[]) {
-    const deaths = [];
-    matches
-      .filter((item, index, array) => {
-        return array.indexOf(item) === index;
-      })
-      .forEach((current: Tile) => {
-        deaths.push(current.die());
-      });
-
-    const scoreValue = playerDamage(matches.length);
-    this.createScoreEffect(matches[0], scoreValue, true).subscribe(() => {
-      this.opponent = {
-        ...this.opponent,
-        life: this.opponent.life - scoreValue,
-      };
-    });
-
-    return deaths;
-  }
-
-  private fillBoard() {
-    const data$: Observable<void>[] = [];
-    for (let column = 0; column < this.boardData.columns; column++) {
-      let shift = 0;
-      const shiftData = [];
-      for (let row = this.boardData.rows - 1; row >= 0; row--) {
-        const tile = this.board.getAt({ row, column } as Position);
-        if (!tile || !tile.alive) {
-          shiftData.push({ row: shift, column });
-          shift++;
-          continue;
-        }
-        if (shift > 0) {
-          const shift$ = tile.shift({ row: row + shift, column });
-          data$.push(shift$);
-        }
+  private updateMap(options: { isPlayer: boolean }) {
+    return concatMap((update: Update) => {
+      if (update.type === 'shift') {
+        return this.onUpdateShift(update);
       }
-      shiftData.forEach(({ row, column }) => {
-        const tile = this.board.createAt(
-          { row: row - shift, column },
-          this.board.types.shift()
-        );
-        const stream$ = tile.shift({ row, column });
-        data$.push(stream$);
-      });
-    }
-
-    return data$.length ? forkJoin(data$) : EMPTY;
+      if (update.type === 'die') {
+        return this.onUpdateDie(update, options);
+      }
+      if (update.type === 'fill') {
+        return this.onUpdateFill(update);
+      }
+      return EMPTY;
+    });
   }
 
-  private createScoreEffect({ row, column }, value: number, player: boolean) {
+  private createScoreEffect({ row, column }, value: number, isPlayer: boolean) {
     const ref = this.sprite.create(EffectScoreComponent);
     const width = this.boardData.width / this.boardData.columns;
     const height = this.boardData.height / this.boardData.rows;
@@ -396,7 +365,7 @@ export class MultiplayerComponent implements OnInit, OnDestroy {
     score.y = height * row + height / 2 - 15;
 
     let target = { x: 290, y: -70 };
-    if (!player) {
+    if (!isPlayer) {
       target = { x: 10, y: -70 };
     }
 

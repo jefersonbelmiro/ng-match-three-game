@@ -60,7 +60,7 @@ export class LobbyComponent implements OnInit {
       .subscribe((game) => {
         console.log('game changes', game);
         this.game = game;
-        if (!game) {
+        if (!game || game.winnerId) {
           return;
         }
         this.player = game.players.find(
@@ -87,7 +87,7 @@ export class LobbyComponent implements OnInit {
     this.destroyed$.next();
     this.destroyed$.complete();
     if (this.playerState?.matching) {
-      this.server.removeCommands();
+      this.server.pushCommand({ command: 'cancelMatch' });
     }
   }
 
@@ -124,12 +124,12 @@ export class LobbyComponent implements OnInit {
     console.log('cancel');
     this.playerState.match = false;
     this.cd.detectChanges();
-    this.server.removeCommands();
+    this.server.pushCommand({ command: 'cancelMatch' });
   }
 
   onLogout() {
     console.log('logout');
-    this.server.removeCommands();
+    this.server.pushCommand({ command: 'exit' });
     this.server.signOut().subscribe(() => {
       this.user = null;
     });

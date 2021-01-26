@@ -109,6 +109,20 @@ export class BoardService {
     return (this.data[position.row] || [])[position.column];
   }
 
+  getData() {
+    const data = [];
+    for (let row = 0; row < this.data.length; row++) {
+      const columns = this.data[row];
+      data[row] = [];
+      for (let column = 0; column < columns.length; column++) {
+        const tile = this.getAt({ row, column });
+        const type = monsters.indexOf(tile.type);
+        data[row][column] = type;
+      }
+    }
+    return data;
+  }
+
   getAllRow(row: number) {
     const data = [];
     for (let column = 0; column < this.columns; column++) {
