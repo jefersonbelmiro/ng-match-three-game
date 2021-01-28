@@ -4,6 +4,7 @@ import { createBoard, createPool, shift } from './../../shared/board';
 import { find } from './../../shared/find';
 import {
   Game,
+  Player,
   playerDamage,
   PlayerState,
   processMatchesFactory,
@@ -92,7 +93,6 @@ async function onGameEnd(id: string, root: admin.database.Reference) {
     })
   );
 
-  updates.push(root.child(`/players_states/${id}`).remove());
   updates.push(root.child(`/commands/${id}`).remove());
   return Promise.all(updates);
 }
@@ -201,21 +201,23 @@ async function onReady(
   { gameId }: ReadyPayload,
   root: admin.database.Reference
 ) {
-  return root.child(`/games/${gameId}`).transaction((state) => {
+  return root.child(`/games/${gameId}`).transaction((state: Game) => {
     if (!state) {
       return null;
     }
 
-    const player = state.players.find((item: { id: string }) => {
-      return item.id === id;
-    });
+    const player: Player = state.players.find((item) => item.id === id)!;
     player.ready = true;
 
-    const allReady = state.players.every((item: { ready: boolean }) => {
-      return item.ready;
-    });
+    const allReady = state.players.every((item) => item.ready);
+
     if (allReady) {
       state.board = createBoard();
+      state.pool = {};
+      state.players.forEach((item) => {
+        (state.pool as any)[item.id] = createPoolList();
+      });
+      console.log('onReady: all ready', state);
     }
     return state;
   });
@@ -235,7 +237,7 @@ async function onShift(
     const timestamp = Date.now();
     const { source, target } = payload;
     const updates = state.updates || [];
-    const pool = state.pool || [];
+    const pool = state.pool || {};
     let board = state.board || [];
 
     board = shift(source, target, board);
@@ -254,13 +256,19 @@ async function onShift(
     });
 
     if (matches?.length) {
-      const processMatches = processMatchesFactory(board, pool, {
+      const poolType = pool[id].map((item) => item.value);
+      const processMatches = processMatchesFactory(board, poolType, {
         ownerId: id,
         timestamp,
       });
       const { board: boardUpdated, updates: newUpdates } = processMatches(
         matches
       );
+
+      // update removed index from processMatches
+      while (pool[id].length > poolType.length) {
+        pool[id].shift();
+      }
 
       updates.push(...newUpdates);
       board = boardUpdated;
@@ -289,15 +297,23 @@ async function onShift(
       });
     }
 
+    if (pool[id].length < 50) {
+      pool[id].push(...createPoolList());
+    }
+
     state.updates = updates;
     state.board = board;
     state.players = state.players;
-
-    if (pool.length < 50) {
-      state.pool = [...pool, ...createPool(50)];
-    }
+    state.pool = pool;
 
     return state;
+  });
+}
+
+function createPoolList(length = 100) {
+  const timestamp = Date.now();
+  return createPool(length).map((value, index) => {
+    return { index, value, timestamp };
   });
 }
 
@@ -312,13 +328,12 @@ async function createGame(
       life: 666,
     };
   });
-  const pool = createPool();
   const turnId = playersIds[Math.floor(Math.random() * players.length)];
   const gameRef = await root.child('/games').push();
   const gameId = gameRef.key;
-  await gameRef.set({ id: gameId, players, turnId, pool });
+  await gameRef.set({ id: gameId, players, turnId });
 
-  console.log('createGame', gameId, players);
+  console.log('createGame', gameId, players, turnId);
 
   const updates = playersIds.map((id) => {
     return root

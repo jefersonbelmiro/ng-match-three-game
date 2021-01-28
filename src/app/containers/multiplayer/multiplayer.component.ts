@@ -8,6 +8,15 @@ import {
   ViewContainerRef,
 } from '@angular/core';
 import { Router } from '@angular/router';
+import { Position } from '@shared/board';
+import { find } from '@shared/find';
+import {
+  Game,
+  Player,
+  playerDamage,
+  processMatchesFactory,
+  Update,
+} from '@shared/server';
 import {
   EMPTY,
   forkJoin,
@@ -29,6 +38,7 @@ import {
   takeUntil,
   tap,
 } from 'rxjs/operators';
+import { EffectScoreComponent } from '../../components/effect-score/effect-score.component';
 import { BoardService } from '../../services/board.service';
 import { ServerService } from '../../services/server.service';
 import { SpriteService } from '../../services/sprite.service';
@@ -36,17 +46,6 @@ import { StateService } from '../../services/state.service';
 import { TileService } from '../../services/tile.service';
 import { Board, Tile } from '../../shared';
 import { User } from '../../shared/firebase';
-import {
-  Game,
-  Player,
-  playerDamage,
-  processMatchesFactory,
-  Update,
-} from '@shared/server';
-import { Position } from '@shared/board';
-import { MatchService } from '../../services/match.service';
-import { EffectScoreComponent } from '../../components/effect-score/effect-score.component';
-import { find } from '@shared/find';
 
 @Component({
   selector: 'app-multiplayer',
@@ -54,7 +53,7 @@ import { find } from '@shared/find';
   styleUrls: ['./multiplayer.component.scss'],
 })
 export class MultiplayerComponent implements OnInit, OnDestroy {
-  @ViewChild('container', { read: ViewContainerRef })
+  @ViewChild('container', { read: ViewContainerRef, static: true })
   container: ViewContainerRef;
 
   user: User;
@@ -66,6 +65,7 @@ export class MultiplayerComponent implements OnInit, OnDestroy {
   loading: boolean;
 
   winnerText: string;
+  poolType: number[];
 
   destroyed$ = new ReplaySubject(1);
 
@@ -77,8 +77,7 @@ export class MultiplayerComponent implements OnInit, OnDestroy {
     private router: Router,
     private server: ServerService,
     private cd: ChangeDetectorRef,
-    private ngZone: NgZone,
-    private matches: MatchService
+    private ngZone: NgZone
   ) {
     let size = 350;
     this.boardData = {
@@ -98,10 +97,13 @@ export class MultiplayerComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
-    forkJoin([this.loadUser(), this.loadGame(), this.loadBoard()])
+    this.sprite.setContainer(this.container);
+
+    forkJoin([this.loadUser(), this.loadGame()])
       .pipe(
         switchMap(() => {
           return merge(
+            this.loadBoard(),
             this.loadTurn(),
             this.loadUpdates(),
             this.loadTypesPool(),
@@ -125,9 +127,11 @@ export class MultiplayerComponent implements OnInit, OnDestroy {
   createBoard(data: number[][]) {
     const createTile = this.tileBuilder.createFactory();
     const destroyTile = this.tileBuilder.destroyFactory();
+    const updateTile = this.tileBuilder.updateFactory();
     this.board.createFromServer(this.boardData, data, {
       createTile,
       destroyTile,
+      updateTile,
     });
   }
 
@@ -137,7 +141,6 @@ export class MultiplayerComponent implements OnInit, OnDestroy {
 
   onSwap({ source, target }) {
     if (this.turnId !== this.player.id) {
-      console.log('doSwap opponent turn');
       return;
     }
     const payload = {
@@ -147,13 +150,11 @@ export class MultiplayerComponent implements OnInit, OnDestroy {
       target: { row: target.row, column: target.column },
     };
     this.server.pushCommand(payload);
-    // this.state.setBusy(true, true);
     this.turnId = this.opponent.id;
-    console.log('onSwap', { source, target, payload });
     this.doSwap(source, target).subscribe(() => {
-      // const matches = this.matches.find();
-      // this.processMatches(matches);
-      this.processMatches().subscribe();
+      this.processMatches()
+        .pipe(finalize(() => this.board.sync()))
+        .subscribe();
     });
   }
 
@@ -184,8 +185,13 @@ export class MultiplayerComponent implements OnInit, OnDestroy {
   }
 
   private loadGame() {
+    this.loading = true;
+    this.board.data = [];
     return this.server.gameReady(2000).pipe(
       take(1),
+      finalize(() => {
+        this.loading = false;
+      }),
       tap((game) => {
         console.log('game', { game });
         this.game = game;
@@ -198,6 +204,10 @@ export class MultiplayerComponent implements OnInit, OnDestroy {
         this.opponent = game.players.find(
           (player) => player.id !== this.user.uid
         );
+        if (!this.board.data?.length) {
+          this.createBoard(game.board);
+          this.cd.detectChanges();
+        }
       }),
       catchError((error) => {
         console.log('catchError', error);
@@ -210,21 +220,10 @@ export class MultiplayerComponent implements OnInit, OnDestroy {
   }
 
   private loadBoard() {
-    this.loading = true;
-    return this.server.gameReady().pipe(
-      switchMap(() => this.server.changes.board),
-      filter((data) => !!data?.length),
-      take(1),
-      finalize(() => {
-        this.loading = false;
-      }),
+    return this.server.changes.board.pipe(
       tap((data) => {
-        this.loading = false;
-        console.log('board', { data });
-        setTimeout(() => {
-          this.sprite.setContainer(this.container);
-          this.createBoard(data);
-        });
+        console.log('loadBoard', { data });
+        this.board.serverData = data;
       })
     );
   }
@@ -254,11 +253,19 @@ export class MultiplayerComponent implements OnInit, OnDestroy {
     );
   }
 
-  private loadTypesPool(): Observable<number[]> {
+  private loadTypesPool() {
     return this.server.changes.pool.pipe(
-      this.waitBusy(),
+      take(1),
       tap((pool) => {
-        this.board.types = pool;
+        console.log('loadTypesPool', pool);
+        this.poolType = pool;
+      }),
+      switchMap(() => {
+        return this.server.changes.poolAdded;
+      }),
+      tap((type) => {
+        console.log('pool added', type);
+        this.poolType.push(type);
       })
     );
   }
@@ -333,8 +340,7 @@ export class MultiplayerComponent implements OnInit, OnDestroy {
       return EMPTY;
     }
 
-    const pool = this.board.types;
-    const processMatches = processMatchesFactory(board, pool);
+    const processMatches = processMatchesFactory(board, this.poolType);
     const { updates } = processMatches(matches);
 
     return from(updates).pipe(this.updateMap({ isPlayer: true }));

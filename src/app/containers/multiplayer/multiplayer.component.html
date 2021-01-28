@@ -1,4 +1,4 @@
-<div class="content" *ngIf="!loading; else loadingTpl">
+<div class="content" [hidden]="loading">
   <app-multiplayer-status
     [player]="player"
     [opponent]="opponent"
@@ -26,8 +26,6 @@
   </div>
 </div>
 
-<ng-template #loadingTpl>
-  <div class="loader-container">Loading...</div>
-</ng-template>
+<div *ngIf="loading" class="loader-container">Loading...</div>
 
 <app-play-background></app-play-background>

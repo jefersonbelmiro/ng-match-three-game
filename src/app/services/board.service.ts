@@ -12,13 +12,15 @@ export class BoardService {
   columns: number;
   height: number;
   width: number;
-  types: number[];
+  types: number[] = [];
   createTile: (
     board: Board,
     position: Position,
     type: string
   ) => ComponentRef<Tile>;
   destroyTile: (data: Tile) => void;
+  updateTile: (tile: Tile, data: Partial<Tile>) => void;
+  serverData: number[][] = [];
 
   constructor() {}
 
@@ -45,15 +47,17 @@ export class BoardService {
   createFromServer(
     board: Board,
     data: number[][],
-    { createTile, destroyTile }
+    { createTile, destroyTile, updateTile }
   ) {
     this.data = [];
+    this.serverData = data;
     this.rows = board.rows;
     this.columns = board.columns;
     this.width = board.width;
     this.height = board.height;
     this.createTile = createTile;
     this.destroyTile = destroyTile;
+    this.updateTile = updateTile;
 
     for (let row = 0; row < data.length; row++) {
       this.data[row] = [];
@@ -111,10 +115,9 @@ export class BoardService {
 
   getData() {
     const data = [];
-    for (let row = 0; row < this.data.length; row++) {
-      const columns = this.data[row];
+    for (let row = 0; row < this.rows; row++) {
       data[row] = [];
-      for (let column = 0; column < columns.length; column++) {
+      for (let column = 0; column < this.columns; column++) {
         const tile = this.getAt({ row, column });
         const type = monsters.indexOf(tile.type);
         data[row][column] = type;
@@ -179,5 +182,39 @@ export class BoardService {
     const column = Math.abs(target.column - source.column);
     const row = Math.abs(target.row - source.row);
     return Math.max(column, row) <= 1;
+  }
+
+  // detect sync issues
+  sync() {
+    for (let row = 0; row < this.serverData.length; row++) {
+      const columns = this.serverData[row];
+      for (let column = 0; column < columns.length; column++) {
+        const tile = this.getAt({ row, column });
+        if (!tile) {
+          console.error('WTF: empty tile', { row, column });
+          continue;
+        }
+
+        const type = monsters.indexOf(tile.type);
+        const serverType = this.serverData[row][column];
+        const typeName = monsters[type];
+        const serverTypeName = monsters[serverType];
+        if (type === serverType) {
+          continue;
+        }
+        console.error('SYNC ERROR', {
+          row,
+          column,
+          type,
+          typeName,
+          serverType,
+          serverTypeName,
+        });
+        // workaround - update from server data
+        tile.type = serverTypeName;
+        this.setAt({ row, column }, tile);
+        this.updateTile(tile, { type: serverTypeName });
+      }
+    }
   }
 }

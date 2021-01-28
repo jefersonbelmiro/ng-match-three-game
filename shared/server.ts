@@ -21,7 +21,12 @@ export interface Game {
   turnId?: string;
   winnerId?: string;
   updates?: any[];
-  pool?: number[];
+  pool?: {
+    [id: string]: {
+      timestamp: number;
+      value: number;
+    }[];
+  };
   board?: number[][];
 }
 

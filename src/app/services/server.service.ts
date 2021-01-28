@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { AngularFireDatabase } from '@angular/fire/database';
 import { Command, Game, PlayerState, Update } from '@shared/server';
-import { EMPTY, from, Observable, ReplaySubject, Subscriber } from 'rxjs';
+import { defer, from, Observable, ReplaySubject, Subscriber } from 'rxjs';
 import {
   debounceTime,
   filter,
@@ -9,13 +9,14 @@ import {
   switchMap,
   takeUntil,
   timeout,
+  map,
 } from 'rxjs/operators';
 import {
   DataSnapshot,
   EventType,
+  Query,
   Reference,
   User,
-  Query,
 } from '../shared/firebase';
 import { AuthService } from './auth.service';
 
@@ -32,6 +33,7 @@ export class ServerService {
     turn?: Observable<string>;
     winner?: Observable<string>;
     pool?: Observable<number[]>;
+    poolAdded?: Observable<number>;
   } = {
     user: new ReplaySubject<User>(1),
     playersStates: new ReplaySubject<PlayerState>(1),
@@ -88,8 +90,12 @@ export class ServerService {
     console.log('ready', { uid, gameId });
   }
 
-  pushCommand(payload: Command) {
-    return from(this.refCommands.push(payload));
+  pushCommand(payload: Command, options = { execute: true }) {
+    const stream = defer(() => from(this.refCommands.push(payload)));
+    if (options.execute) {
+      return stream.subscribe();
+    }
+    return stream;
   }
 
   on(
@@ -142,13 +148,14 @@ export class ServerService {
 
     return stream.pipe(
       filter((state) => !!state?.gameId),
+      // turn async
       debounceTime(0),
       switchMap(() => this.changes.game),
       takeUntil(this.destroyed$)
     );
   }
 
-  private listen<T = any>(
+  listen<T = any>(
     path: string,
     type: EventType = 'value',
     query?: (ref: Reference) => Query
@@ -178,7 +185,6 @@ export class ServerService {
 
   private onPlayerStateChanges = (state: any) => {
     console.log('onPlayerStateChanges', state);
-    this.changes.playersStates.next(state);
 
     if (state?.gameId && state.gameId !== this.gameId) {
       this.gameId = state.gameId;
@@ -187,7 +193,18 @@ export class ServerService {
       this.changes.board = this.listen('/games/{gameId}/board');
       this.changes.turn = this.listen('/games/{gameId}/turnId');
       this.changes.winner = this.listen('/games/{gameId}/winnerId');
-      this.changes.pool = this.listen('/games/{gameId}/pool');
+      this.changes.pool = this.listen('/games/{gameId}/pool/{uid}').pipe(
+        map(
+          (items) => items && items.map(({ value }: { value: number }) => value)
+        )
+      );
+      this.changes.poolAdded = this.listen(
+        '/games/{gameId}/pool/{uid}',
+        'child_added',
+        (ref: Reference) => {
+          return ref.orderByChild('timestamp').startAt(Date.now());
+        }
+      ).pipe(map((item) => item?.value));
 
       this.changes.updates = this.listen(
         '/games/{gameId}/updates',
@@ -204,6 +221,8 @@ export class ServerService {
       //     this.changes.updates.next(snapshot.val());
       //   });
     }
+
+    this.changes.playersStates.next(state);
   };
 
   private pathResolve(path: string) {

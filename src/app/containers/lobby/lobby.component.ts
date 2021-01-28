@@ -1,11 +1,11 @@
 import { ChangeDetectorRef, Component, NgZone, OnInit } from '@angular/core';
 import { DatabaseReference } from '@angular/fire/database/interfaces';
-import { finalize, takeUntil } from 'rxjs/operators';
+import { finalize, takeUntil, tap } from 'rxjs/operators';
 import { Router } from '@angular/router';
-import { ReplaySubject } from 'rxjs';
+import { Observable, ReplaySubject } from 'rxjs';
 import { ServerService } from '../../services/server.service';
 import { Game, Player, PlayerState } from '@shared/server';
-import { User } from '../../shared/firebase';
+import { Reference, User } from '../../shared/firebase';
 
 @Component({
   selector: 'app-lobby',
@@ -14,7 +14,7 @@ import { User } from '../../shared/firebase';
 })
 export class LobbyComponent implements OnInit {
   user: User;
-  playerState: PlayerState;
+  playerState: PlayerState = {};
   game: Game;
 
   player: Player;
@@ -50,7 +50,7 @@ export class LobbyComponent implements OnInit {
       .pipe(takeUntil(this.destroyed$))
       .subscribe((state) => {
         console.log('playersStates changes', state);
-        this.playerState = state;
+        this.playerState = state || {};
         this.cd.detectChanges();
       });
 
@@ -109,11 +109,17 @@ export class LobbyComponent implements OnInit {
 
   onFindOpponent() {
     console.log('find opponent');
-    if (!this.playerState) {
-      this.playerState = {};
-    }
     this.playerState.matching = true;
-    this.server.pushCommand({ command: 'match' });
+    this.loading = true;
+    this.cd.detectChanges();
+
+    const stream = this.server.pushCommand(
+      { command: 'match' },
+      { execute: false }
+    );
+    (stream as Observable<Reference>)
+      .pipe(finalize(() => (this.loading = false)))
+      .subscribe();
   }
 
   onReady() {

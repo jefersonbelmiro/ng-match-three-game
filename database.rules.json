@@ -20,7 +20,17 @@
     },
     "games": {
       ".read": true,
-      ".write": false
+      ".write": false,
+      "$gameid": {
+        "updates": {
+          ".indexOn": "timestamp"
+        },
+        "pool": {
+          "$playerid": {
+            ".indexOn": ["index", "timestamp"]
+          }
+        }
+      }
     }
   }
 }

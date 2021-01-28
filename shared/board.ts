@@ -53,7 +53,7 @@ export function getAt(target: Position, board: number[][]): Tile | null {
     return null;
   }
   const type = board[row][column];
-  if (type === null || type === -1) {
+  if (type === null || type === undefined || type === -1) {
     return null;
   }
   return { ...target, type };
@@ -82,8 +82,8 @@ export function shift(source: Position, target: Position, board: number[][]) {
 }
 
 export function from(board: number[][]) {
-  return board.slice().map((row) => {
-    return row.slice();
+  return board.map((row) => {
+    return row.slice(0);
   });
 }
 
