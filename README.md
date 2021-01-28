@@ -6,10 +6,11 @@
 
 ### TODO
 - [x] update angular v9 - v11
-- [ ] suport HMR(Hot Module Replacement)
 - [x] deploy in firebase
+- [x] basic multiplayer
+- [ ] suport HMR(Hot Module Replacement)
 - [ ] fix/remove deploy ghpages
-- [x] multiplayer
+- [ ] create github env with firebase keys used in `.env`
 - [ ] level editor(admin)
 - [ ] level sync(client)
 - [ ] create progressively challenging levels
