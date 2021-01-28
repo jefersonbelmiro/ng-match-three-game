@@ -298,7 +298,7 @@ async function onShift(
     }
 
     if (pool[id].length < 50) {
-      pool[id].push(...createPoolList());
+      pool[id].push(...createPoolList({ offset: pool[id].length }));
     }
 
     state.updates = updates;
@@ -310,10 +310,11 @@ async function onShift(
   });
 }
 
-function createPoolList(length = 100) {
+function createPoolList(options?: { length?: number; offset?: number }) {
+  const { length = 100, offset = 0 } = options || {};
   const timestamp = Date.now();
   return createPool(length).map((value, index) => {
-    return { index, value, timestamp };
+    return { index: offset + index, value, timestamp };
   });
 }
 

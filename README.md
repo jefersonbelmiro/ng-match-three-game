@@ -8,9 +8,10 @@
 - [x] update angular v9 - v11
 - [x] deploy in firebase
 - [x] basic multiplayer
+- [ ] show version(title|footer|metatag)
 - [ ] suport HMR(Hot Module Replacement)
 - [ ] fix/remove deploy ghpages
-- [ ] create github env with firebase keys used in `.env`
+  - [ ] create github env with firebase keys used in `.env`
 - [ ] level editor(admin)
 - [ ] level sync(client)
 - [ ] create progressively challenging levels
