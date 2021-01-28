@@ -23,6 +23,13 @@ export class TileService {
     };
   }
 
+  updateFactory() {
+    return (tile: Tile, data: Tile) => {
+      const ref = this.sprite.get(tile);
+      this.sprite.update(ref, data);
+    };
+  }
+
   destroyFactory() {
     return (data: Tile) => {
       return this.sprite.destroy(data);

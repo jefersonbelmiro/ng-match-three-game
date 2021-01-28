@@ -1,0 +1,82 @@
+:host {
+  display: block;
+  height: 50px;
+  width: 100%;
+  margin-bottom: 30px;
+}
+
+.content {
+  font-family: "Titan One", cursive;
+  // font-family: "PT Mono", monospace;
+
+  position: absolute;
+  display: flex;
+  height: 50px;
+  width: 100%;
+  flex-direction: row;
+  justify-content: space-between;
+  user-select: none;
+  color: white;
+  z-index: 100;
+
+  > * {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    color: #ddd;
+    text-shadow: -1px 0 black, 0 1px black, 1px 0 black, 0 -1px black;
+    background: rgba(255, 255, 255, 0.1);
+  }
+}
+
+.box {
+  margin-top: 5px;
+  width: 172px;
+  height: 70px;
+  position: relative;
+  fa-icon {
+    font-size: 25px;
+    position: absolute;
+    left: 0;
+    top: 0;
+    color: rgba(255, 255, 255, 0.4);
+  }
+}
+
+.nick {
+  padding: 0 5px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.align-right {
+  text-align: right;
+  width: 100%;
+}
+
+.align-left {
+  text-align: left;
+  width: 100%;
+}
+
+.life {
+  flex: 1;
+  padding: 0 5px;
+  font-size: 25px;
+}
+
+.turn {
+  visibility: hidden;
+  background: rgba(0, 0, 0, 0.2);
+  width: 100%;
+  text-align: center;
+  padding: 5px;
+  font-size: 10px;
+
+  &--show {
+    visibility: visible;
+  }
+}

@@ -2,7 +2,7 @@ import { Component, OnInit, ViewChild } from '@angular/core';
 import { Router } from '@angular/router';
 import { timer } from 'rxjs';
 import { TileComponent } from '../../components/tile/tile.component';
-import { Monsters, Tile } from '../../shared';
+import { Monsters } from '../../shared';
 import { StateService } from '../../services/state.service';
 
 @Component({
@@ -28,5 +28,10 @@ export class MenuComponent implements OnInit {
   onStart() {
     this.state.set({ scene: 'level' });
     this.router.navigate(['/level']);
+  }
+
+  onMatch() {
+    this.state.set({ scene: 'lobby' });
+    this.router.navigate(['/lobby']);
   }
 }

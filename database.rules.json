@@ -1,0 +1,36 @@
+{
+  "rules": {
+    "commands": {
+      "$uid": {
+        ".read": false,
+        ".write": "$uid === auth.uid"
+      }
+    },
+    "players": {
+      "$uid": {
+        ".read": true,
+        ".write": "$uid === auth.uid"
+      }
+    },
+    "players_states": {
+      "$uid": {
+        ".read": "$uid === auth.uid",
+        ".write": false
+      }
+    },
+    "games": {
+      ".read": true,
+      ".write": false,
+      "$gameid": {
+        "updates": {
+          ".indexOn": "timestamp"
+        },
+        "pool": {
+          "$playerid": {
+            ".indexOn": ["index", "timestamp"]
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,5 +1,12 @@
 import { Injectable } from '@angular/core';
-import { Store, Tile, PowerUp, PowerUps, Colors, Level } from '../shared';
+import {
+  Store,
+  Tile,
+  PowerUp,
+  PowerUps,
+  Level,
+  MultiplayerData,
+} from '../shared';
 
 const initialStateFactory = () => ({
   scene: 'menu' as const,
@@ -25,7 +32,7 @@ const initialStateFactory = () => ({
 });
 
 export interface State {
-  scene: 'menu' | 'level' | 'play';
+  scene: 'menu' | 'level' | 'lobby' | 'play';
   busy: number;
   selected?: Tile;
 
@@ -33,18 +40,22 @@ export interface State {
   powerUps?: PowerUp[];
 
   level?: Level;
+
+  multiplayer?: MultiplayerData;
 }
 
 @Injectable({
   providedIn: 'root',
 })
 export class StateService extends Store<State> {
+  busyQuery = [];
+
   constructor() {
     super(initialStateFactory());
   }
 
-  setBusy(busy: boolean) {
-    let current = this.getValue().busy;
+  setBusy(busy: boolean, force = false) {
+    let current = force ? +busy : this.getValue().busy;
     current += busy ? 1 : -1;
     if (current < 0) {
       current = 0;
@@ -53,6 +64,14 @@ export class StateService extends Store<State> {
   }
 
   isBusy() {
-    return this.getValue().busy > 0;
+    let { busy } = this.getValue();
+    if (busy === 0 && this.busyQuery.length) {
+      busy = +this.busyQuery.some((query) => query());
+    }
+    return busy > 0;
+  }
+
+  setBusyQuery(queries: (() => boolean)[]) {
+    this.busyQuery = queries;
   }
 }

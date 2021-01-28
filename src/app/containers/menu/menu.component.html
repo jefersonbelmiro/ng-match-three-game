@@ -2,7 +2,10 @@
   <div class="logo">
     <app-tile [type]="tileType"></app-tile>
   </div>
-  <button (click)="onStart()" class="btn">START</button>
+  <div class="action">
+    <button (click)="onStart()" class="btn">Single player</button>
+    <button (click)="onMatch()" class="btn">Multiplayer</button>
+  </div>
 </div>
 
 <app-play-background></app-play-background>

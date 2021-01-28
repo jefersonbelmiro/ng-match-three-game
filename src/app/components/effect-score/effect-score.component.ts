@@ -18,8 +18,8 @@ import { SpriteComponent } from '../sprite/sprite.component';
 export class EffectScoreComponent extends SpriteComponent {
   @Input() value: number;
 
-  die() {
-    const target = { x: 270, y: -70 } as Sprite;
+  die(to?: { x: number; y: number }) {
+    const target = (to || { x: 270, y: -70 }) as Sprite;
     const params = { params: { delay: 500, duration: 700 } };
     const animation = group([
       style({ transform: 'scale(0)' }),
