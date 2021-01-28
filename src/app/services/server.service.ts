@@ -194,9 +194,10 @@ export class ServerService {
       this.changes.turn = this.listen('/games/{gameId}/turnId');
       this.changes.winner = this.listen('/games/{gameId}/winnerId');
       this.changes.pool = this.listen('/games/{gameId}/pool/{uid}').pipe(
-        map(
-          (items) => items && items.map(({ value }: { value: number }) => value)
-        )
+        map((items) => {
+          console.log('pool raw', items);
+          return items && items.map(({ value }: { value: number }) => value);
+        })
       );
       this.changes.poolAdded = this.listen(
         '/games/{gameId}/pool/{uid}',
@@ -204,7 +205,12 @@ export class ServerService {
         (ref: Reference) => {
           return ref.orderByChild('timestamp').startAt(Date.now());
         }
-      ).pipe(map((item) => item?.value));
+      ).pipe(
+        map((item) => {
+          console.log('pool added raw', item);
+          return item?.value;
+        })
+      );
 
       this.changes.updates = this.listen(
         '/games/{gameId}/updates',

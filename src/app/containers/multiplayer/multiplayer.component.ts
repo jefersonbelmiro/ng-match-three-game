@@ -152,9 +152,7 @@ export class MultiplayerComponent implements OnInit, OnDestroy {
     this.server.pushCommand(payload);
     this.turnId = this.opponent.id;
     this.doSwap(source, target).subscribe(() => {
-      this.processMatches()
-        .pipe(finalize(() => this.board.sync()))
-        .subscribe();
+      this.processMatches().subscribe();
     });
   }
 
@@ -224,7 +222,9 @@ export class MultiplayerComponent implements OnInit, OnDestroy {
       tap((data) => {
         console.log('loadBoard', { data });
         this.board.serverData = data;
-      })
+      }),
+      this.waitBusy(),
+      tap(() => this.board.sync())
     );
   }
 

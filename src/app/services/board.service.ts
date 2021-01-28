@@ -186,6 +186,10 @@ export class BoardService {
 
   // detect sync issues
   sync() {
+    console.log('sync');
+    if (!this.serverData) {
+      return;
+    }
     for (let row = 0; row < this.serverData.length; row++) {
       const columns = this.serverData[row];
       for (let column = 0; column < columns.length; column++) {
@@ -195,18 +199,18 @@ export class BoardService {
           continue;
         }
 
-        const type = monsters.indexOf(tile.type);
+        const localType = monsters.indexOf(tile.type);
         const serverType = this.serverData[row][column];
-        const typeName = monsters[type];
+        const localTypeName = monsters[localType];
         const serverTypeName = monsters[serverType];
-        if (type === serverType) {
+        if (localType === serverType) {
           continue;
         }
         console.error('SYNC ERROR', {
           row,
           column,
-          type,
-          typeName,
+          localType,
+          localTypeName,
           serverType,
           serverTypeName,
         });

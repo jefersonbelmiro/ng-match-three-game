@@ -217,7 +217,10 @@ async function onReady(
       state.players.forEach((item) => {
         (state.pool as any)[item.id] = createPoolList();
       });
-      console.log('onReady: all ready', state);
+      console.log('onReady: all ready', {
+        board: state.board,
+        playerPool: state.pool[id],
+      });
     }
     return state;
   });

@@ -4,6 +4,8 @@
  - [firebase hosting](https://ng-match-three-game-37663.web.app)
  - [github page](https://jefersonbelmiro.github.io/ng-match-three-game/) (`OUTDATED`)
 
+![Level 3](images/level3.gif)
+
 ### TODO
 - [x] update angular v9 - v11
 - [x] deploy in firebase
