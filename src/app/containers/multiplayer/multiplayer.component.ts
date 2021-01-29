@@ -44,7 +44,7 @@ import { ServerService } from '../../services/server.service';
 import { SpriteService } from '../../services/sprite.service';
 import { StateService } from '../../services/state.service';
 import { TileService } from '../../services/tile.service';
-import { Board, Tile } from '../../shared';
+import { Board } from '../../shared';
 import { User } from '../../shared/firebase';
 
 @Component({
@@ -81,8 +81,8 @@ export class MultiplayerComponent implements OnInit, OnDestroy {
   ) {
     let size = 350;
     this.boardData = {
-      rows: 5, // @TODO - get from data.length
-      columns: 5, // @TODO - get from data[0].length
+      rows: 5,
+      columns: 5,
       width: size,
       height: size,
     };
@@ -113,7 +113,7 @@ export class MultiplayerComponent implements OnInit, OnDestroy {
         takeUntil(this.destroyed$)
       )
       .subscribe({
-        error: (error) => console.log('error', error),
+        error: (error) => console.error('ngOnInit', error),
       });
   }
 
@@ -135,10 +135,6 @@ export class MultiplayerComponent implements OnInit, OnDestroy {
     });
   }
 
-  onSelect(tile: Tile) {
-    console.log('onSelect', { tile });
-  }
-
   onSwap({ source, target }) {
     if (this.turnId !== this.player.id) {
       return;
@@ -157,7 +153,6 @@ export class MultiplayerComponent implements OnInit, OnDestroy {
   }
 
   doSwap(source: Position, target: Position) {
-    console.log('doSwap', { source, target });
     this.state.setBusy(true);
     const sourceTile = this.board.getAt(source);
     const targetTile = this.board.getAt(target);
@@ -191,7 +186,6 @@ export class MultiplayerComponent implements OnInit, OnDestroy {
         this.loading = false;
       }),
       tap((game) => {
-        console.log('game', { game });
         this.game = game;
         if (!game) {
           return;
@@ -208,7 +202,6 @@ export class MultiplayerComponent implements OnInit, OnDestroy {
         }
       }),
       catchError((error) => {
-        console.log('catchError', error);
         if (error?.name === 'TimeoutError') {
           this.ngZone.run(() => this.router.navigate(['/']));
         }
@@ -220,7 +213,6 @@ export class MultiplayerComponent implements OnInit, OnDestroy {
   private loadBoard() {
     return this.server.changes.board.pipe(
       tap((data) => {
-        console.log('loadBoard', { data });
         this.board.serverData = data;
       }),
       this.waitBusy(),
@@ -230,11 +222,8 @@ export class MultiplayerComponent implements OnInit, OnDestroy {
 
   private loadTurn() {
     return this.server.changes.turn.pipe(
-      // this.waitBusy(),
       tap((turnId) => {
         this.turnId = turnId;
-        const playerTurn = this.player?.id === turnId;
-        console.log('turn', turnId, playerTurn);
         this.cd.detectChanges();
       })
     );
@@ -257,14 +246,12 @@ export class MultiplayerComponent implements OnInit, OnDestroy {
     return this.server.changes.pool.pipe(
       take(1),
       tap((pool) => {
-        console.log('loadTypesPool', pool);
         this.poolType = pool;
       }),
       switchMap(() => {
         return this.server.changes.poolAdded;
       }),
       tap((type) => {
-        console.log('pool added', type);
         this.poolType.push(type);
       })
     );

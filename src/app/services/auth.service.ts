@@ -34,7 +34,6 @@ export class AuthService {
     public afAuth: AngularFireAuth // Inject Firebase auth service
   ) {
     this.afAuth.authState.subscribe((user) => {
-      console.log('auth subscribe', { user });
       this.userData = user;
       this.userDataSubject.next(user);
       this.userDataChange.next(user);
@@ -60,7 +59,6 @@ export class AuthService {
     return this.userDataObservable.pipe(
       take(1),
       switchMap((user) => {
-        console.log('userData', { user });
         if (user) {
           return of(user);
         }
@@ -76,7 +74,6 @@ export class AuthService {
     return this.userDataObservable.pipe(
       take(1),
       switchMap((user) => {
-        console.log('userData', { user });
         if (user) {
           return of(user);
         }
@@ -85,7 +82,6 @@ export class AuthService {
         return from(this.afAuth.signInWithRedirect(provider));
       }),
       map(() => {
-        console.log('login google');
         return this.userData;
       })
     );

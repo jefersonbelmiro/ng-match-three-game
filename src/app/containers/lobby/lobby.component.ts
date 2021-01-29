@@ -43,13 +43,11 @@ export class LobbyComponent implements OnInit {
         this.user = user;
         this.loading = false;
         this.cd.detectChanges();
-        console.log('subscribe user observable', user?.uid, { user });
       });
 
     this.server.changes.playersStates
       .pipe(takeUntil(this.destroyed$))
       .subscribe((state) => {
-        console.log('playersStates changes', state);
         this.playerState = state || {};
         this.cd.detectChanges();
       });
@@ -58,7 +56,6 @@ export class LobbyComponent implements OnInit {
       .gameReady()
       .pipe(takeUntil(this.destroyed$))
       .subscribe((game) => {
-        console.log('game changes', game);
         this.game = game;
         if (!game || game.winnerId) {
           return;
@@ -76,10 +73,6 @@ export class LobbyComponent implements OnInit {
         }
 
         this.cd.detectChanges();
-        console.log('game players', {
-          player: this.player,
-          opponent: this.opponent,
-        });
       });
   }
 
@@ -108,7 +101,6 @@ export class LobbyComponent implements OnInit {
   }
 
   onFindOpponent() {
-    console.log('find opponent');
     this.playerState.matching = true;
     this.loading = true;
     this.cd.detectChanges();
@@ -127,14 +119,12 @@ export class LobbyComponent implements OnInit {
   }
 
   onCancel() {
-    console.log('cancel');
     this.playerState.match = false;
     this.cd.detectChanges();
     this.server.pushCommand({ command: 'cancelMatch' });
   }
 
   onLogout() {
-    console.log('logout');
     this.server.pushCommand({ command: 'exit' });
     this.server.signOut().subscribe(() => {
       this.user = null;

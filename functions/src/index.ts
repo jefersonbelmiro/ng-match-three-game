@@ -36,7 +36,6 @@ export const OnCreateCommand = functions.database
     const value = snapshot.val();
     const command = value.command;
 
-    console.log('command', { id, cmd_id, command_value: value });
     functions.logger.info('command', { id, cmd_id, command_value: value });
 
     switch (command) {
@@ -178,8 +177,6 @@ async function onMatch(id: string, root: admin.database.Reference) {
   const players =
     (await root.child('/players_states').once('value'))?.val() || {};
 
-  console.log('players', players);
-
   const opponent = Object.keys(players).find((key: string) => {
     const player = players[key] as PlayerState;
     if (key === id || player?.matching !== true) {
@@ -192,7 +189,6 @@ async function onMatch(id: string, root: admin.database.Reference) {
     return createGame([id, opponent], root);
   }
 
-  console.log('opponent', opponent);
   return null;
 }
 
@@ -216,10 +212,6 @@ async function onReady(
       state.pool = {};
       state.players.forEach((item) => {
         (state.pool as any)[item.id] = createPoolList();
-      });
-      console.log('onReady: all ready', {
-        board: state.board,
-        playerPool: state.pool[id],
       });
     }
     return state;
@@ -293,11 +285,6 @@ async function onShift(
         state.winnerId = id;
         state.turnId = '';
       }
-      console.log('damage', {
-        damage,
-        opponentLife: opponent?.life,
-        winnerId: state.winnerId,
-      });
     }
 
     if (pool[id].length < 50) {
@@ -336,8 +323,6 @@ async function createGame(
   const gameRef = await root.child('/games').push();
   const gameId = gameRef.key;
   await gameRef.set({ id: gameId, players, turnId });
-
-  console.log('createGame', gameId, players, turnId);
 
   const updates = playersIds.map((id) => {
     return root

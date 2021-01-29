@@ -51,7 +51,6 @@ export class ServerService {
     this.auth.userDataObservable
       .pipe(takeUntil(this.destroyed$))
       .subscribe((user) => {
-        console.log('userDataObservable', { user });
         const diff = this.user !== user;
         this.user = user;
         this.changes.user.next(user);
@@ -87,7 +86,6 @@ export class ServerService {
     const uid = this.user.uid;
     const gameId = this.gameId;
     this.refCommands.push({ command: 'ready', gameId });
-    console.log('ready', { uid, gameId });
   }
 
   pushCommand(payload: Command, options = { execute: true }) {
@@ -116,7 +114,6 @@ export class ServerService {
       }
       ref.on(type, onValue, onError);
       return () => {
-        console.log('OFF', path);
         ref.off(type, onValue);
       };
     });
@@ -171,8 +168,6 @@ export class ServerService {
   }
 
   private onLogin(user: User) {
-    console.log('onLogin', { user });
-
     this.listen('/players_states/{uid}').subscribe(this.onPlayerStateChanges);
 
     this.refCommands = this.ref('/commands/{uid}');
@@ -184,8 +179,6 @@ export class ServerService {
   }
 
   private onPlayerStateChanges = (state: any) => {
-    console.log('onPlayerStateChanges', state);
-
     if (state?.gameId && state.gameId !== this.gameId) {
       this.gameId = state.gameId;
 
@@ -195,7 +188,6 @@ export class ServerService {
       this.changes.winner = this.listen('/games/{gameId}/winnerId');
       this.changes.pool = this.listen('/games/{gameId}/pool/{uid}').pipe(
         map((items) => {
-          console.log('pool raw', items);
           return items && items.map(({ value }: { value: number }) => value);
         })
       );
@@ -207,7 +199,6 @@ export class ServerService {
         }
       ).pipe(
         map((item) => {
-          console.log('pool added raw', item);
           return item?.value;
         })
       );

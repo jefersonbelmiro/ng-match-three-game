@@ -6,6 +6,9 @@
 
 ![Level 3](images/level3.gif)
 
+### Assets
+[Free Monsters Game Assets](https://free-game-assets.itch.io/free-monsters-game-assets)
+
 ### TODO
 - [x] update angular v9 - v11
 - [x] deploy in firebase
@@ -19,5 +22,5 @@
 - [ ] create progressively challenging levels
 - [ ] rank
 - [ ] detect user anonymously and late converte to auth provider(google, github, facebook...)
-- [ ] gifs/images in README
+- [ ] improve README
 ---

@@ -22,13 +22,11 @@ export class MultiplayerStatusComponent implements OnChanges {
 
   ngOnChanges(changes: SimpleChanges) {
     if (changes?.player && this.player && !this.player.displayName) {
-      console.log('player displayName');
       this.getDisplayName(this.player.id, 'player').subscribe((displayName) => {
         this.player.displayName = displayName;
       });
     }
     if (changes?.opponent && this.opponent && !this.opponent.displayName) {
-      console.log('opponent displayName');
       this.getDisplayName(this.opponent.id, 'opponent').subscribe(
         (displayName) => {
           this.opponent.displayName = displayName;

@@ -7,9 +7,10 @@ const targetPath = `./src/environments/dotenv.ts`;
 
 const environmentFileContent = `export default ${getEnvKeys()};`;
 
-writeFile(targetPath, environmentFileContent, function (err) {
+writeFile(targetPath, environmentFileContent, function (err: Error) {
   if (err) {
-    console.log(err);
+    console.error('writeFile', err);
+    return;
   }
   console.log(`Wrote variables to ${targetPath}`);
 });
@@ -17,11 +18,11 @@ writeFile(targetPath, environmentFileContent, function (err) {
 function getEnvKeys() {
   const data = readFileSync('.env.example', 'utf-8')
     .split(/\r?\n/)
-    .map((line) => {
+    .map((line: string) => {
       return line.trim().replace('=', '');
     })
-    .filter((item) => item)
-    .map((key) => {
+    .filter((item: string) => item)
+    .map((key: string) => {
       let value = process.env[key];
       if (value !== 'true' && value !== 'false') {
         value = `"${value}"`;

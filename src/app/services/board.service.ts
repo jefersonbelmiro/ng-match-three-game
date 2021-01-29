@@ -186,7 +186,6 @@ export class BoardService {
 
   // detect sync issues
   sync() {
-    console.log('sync');
     if (!this.serverData) {
       return;
     }
@@ -195,7 +194,7 @@ export class BoardService {
       for (let column = 0; column < columns.length; column++) {
         const tile = this.getAt({ row, column });
         if (!tile) {
-          console.error('WTF: empty tile', { row, column });
+          console.error('empty tile', { row, column });
           continue;
         }
 
@@ -206,7 +205,7 @@ export class BoardService {
         if (localType === serverType) {
           continue;
         }
-        console.error('SYNC ERROR', {
+        console.error('sync error', {
           row,
           column,
           localType,
